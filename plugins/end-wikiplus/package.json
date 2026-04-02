@@ -1,0 +1,25 @@
+{
+  "name": "@inpageedit/end-wikiplus",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@cordisjs/core": "^3.18.1",
+    "@inpageedit/logger": "^0.1.0",
+    "@inpageedit/modal": "workspace:^",
+    "jsx-dom": "^8.1.6",
+    "schemastery": "^3.17.2",
+    "schemastery-form": "workspace:^",
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.3",
+    "sass-embedded": "^1.97.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

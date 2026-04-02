@@ -1,0 +1,25 @@
+{
+  "manifestVersion": 1,
+  "id": "inpageedit-next-end-wikiplus",
+  "name": "InPageEdit NEXT for End Wiki+",
+  "version": "0.1.0",
+  "description": "End Wiki+ host-first InPageEdit plugin package.",
+  "entry": "dist/index.js",
+  "styles": ["dist/styles.css"],
+  "permissions": [
+    "events.listen",
+    "plugins.list",
+    "storage.read",
+    "storage.write",
+    "wiki.current.read",
+    "wiki.item.read",
+    "wiki.me.read",
+    "wiki.update-info.read",
+    "wiki.item.submit",
+    "wiki.draft.clear"
+  ],
+  "pages": ["wiki-renderer"],
+  "hostCompatibility": {
+    "apiVersion": 1
+  }
+}

@@ -417,6 +417,43 @@ importers:
         specifier: ^3.5.26
         version: 3.5.26(typescript@5.9.3)
 
+  plugins/end-wikiplus:
+    dependencies:
+      '@cordisjs/core':
+        specifier: ^3.18.1
+        version: 3.18.1
+      '@inpageedit/logger':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@inpageedit/modal':
+        specifier: workspace:^
+        version: link:../../packages/modal
+      jsx-dom:
+        specifier: ^8.1.6
+        version: 8.1.6
+      schemastery:
+        specifier: ^3.17.2
+        version: 3.17.2
+      schemastery-form:
+        specifier: workspace:^
+        version: link:../../packages/schemastery-form
+      vue:
+        specifier: ^3.5.26
+        version: 3.5.26(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.3
+        version: 6.0.3(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.4.1)(lightningcss@1.30.2)(sass-embedded@1.97.2)(sass@1.97.2)(tsx@4.21.0))(vue@3.5.26(typescript@5.9.3))
+      sass-embedded:
+        specifier: ^1.97.2
+        version: 1.97.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.4.1)(lightningcss@1.30.2)(sass-embedded@1.97.2)(sass@1.97.2)(tsx@4.21.0)
+
 packages:
 
   '@aashutoshrathi/word-wrap@1.2.6':
