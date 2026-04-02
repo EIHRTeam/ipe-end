@@ -59,6 +59,42 @@ This is a monorepo:
 | docs               | InPageEdit Documentation                                                         | [docs](docs)                                           |
 | plugins            | Official Plugins                                                                 | [plugins](plugins)                                     |
 
+### Build the main workspace
+
+Use the repo root script:
+
+```bash
+pnpm build
+```
+
+The root build now follows the `@inpageedit/core` dependency graph and builds the workspace packages required by core first, instead of assuming their `dist/` outputs already exist.
+
+### End Wiki+ host adapter
+
+This repository now also contains a host-first external plugin package for End Wiki+:
+
+| package | description | directory |
+| --- | --- | --- |
+| @inpageedit/end-wikiplus | End Wiki+ adapter that keeps the IPE shell UI and connects it to the End Wiki+ plugin host APIs | [plugins/end-wikiplus](plugins/end-wikiplus) |
+
+Build it separately with:
+
+```bash
+pnpm --filter @inpageedit/end-wikiplus build
+```
+
+Current artifact output:
+
+- `plugins/end-wikiplus/artifacts/inpageedit-next-end-wikiplus/manifest.json`
+- `plugins/end-wikiplus/artifacts/inpageedit-next-end-wikiplus/dist/index.js`
+- `plugins/end-wikiplus/artifacts/inpageedit-next-end-wikiplus/dist/styles.css`
+
+Notes:
+
+- The End Wiki+ package is not a MediaWiki autoload entry.
+- It keeps the IPE shell structures such as toolbox / quick-edit / quick-diff / quick-preview / preferences-ui / plugin-store.
+- It uses the End Wiki+ host APIs for page context, storage, plugin listing, and wiki submit / draft flows.
+
 ---
 
 🚀 Modular, Extensible Supercharged Plugin for MediaWiki.

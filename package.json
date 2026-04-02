@@ -13,7 +13,7 @@
     "dev": "npm run core:dev",
     "build": "npm run core:build",
     "core:dev": "pnpm --filter core dev",
-    "core:build": "pnpm --filter core build",
+    "core:build": "pnpm --filter @inpageedit/core... build",
     "docs:dev": "pnpm --filter docs dev",
     "docs:build": "pnpm --filter docs build"
   },
