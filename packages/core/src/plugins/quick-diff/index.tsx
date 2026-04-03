@@ -1,4 +1,5 @@
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { type QuickEditEventPayload } from '@/plugins/quick-edit'
 import { IPEModal, IPEModalOptions } from '@inpageedit/modal'
 import { DiffTable, DiffTableEvent } from './components/DiffTable'

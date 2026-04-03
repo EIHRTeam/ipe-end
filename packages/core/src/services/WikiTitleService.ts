@@ -1,6 +1,7 @@
 import { Inject, InPageEdit, Service } from '@/InPageEdit'
 import { IWikiPage } from '@/models/WikiPage/index.js'
 import { createWikiTitleModel, IWikiTitle, WikiTitleConstructor } from '@/models/WikiTitle/index.js'
+import { promiseWithResolvers } from '@/polyfills/Promise.withResolvers'
 
 declare module '@/InPageEdit' {
   interface InPageEdit {

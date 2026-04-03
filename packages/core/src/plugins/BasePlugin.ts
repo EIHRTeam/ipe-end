@@ -1,5 +1,6 @@
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
 import type { Logger } from '@inpageedit/logger'
+import { promiseWithResolvers } from '@/polyfills/Promise.withResolvers'
 import { snakeCase } from '@/utils/string'
 
 interface DisposeHandler {

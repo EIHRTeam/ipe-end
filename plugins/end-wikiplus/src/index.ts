@@ -14,9 +14,11 @@ const bootApp = async (host: HostPluginContext) => {
   const bridge = new EndWikiHostBridge(host)
   const bootstrap = await bridge.bootstrap()
   const app = new EndWikiPlusApp(bridge, bootstrap)
+  await app.withInject(['preferences', 'modal'])
 
   document.body.setAttribute('data-end-wikiplus-ipe', 'active')
   app.plugin(PluginToolbox as never)
+  await app.withInject(['toolbox'])
   app.plugin(EndWikiPreferencesUIPlugin as never)
   app.plugin(EndWikiQuickDiffPlugin as never)
   app.plugin(EndWikiQuickPreviewPlugin as never)

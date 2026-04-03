@@ -1,8 +1,10 @@
+import { Inject } from '@/InPageEdit'
 import BasePlugin from '@/plugins/BasePlugin'
 import type { QuickEditUiState } from '@plugin/types/editor'
 import { capabilityByKey } from '@plugin/constants/capabilities'
 import { createCapabilityBadge, createElement } from '@plugin/utils/dom'
 
+@Inject(['modal'])
 export class EndWikiQuickDiffPlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-quick-diff')

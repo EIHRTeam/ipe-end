@@ -1,15 +1,19 @@
+import { Inject } from '@/InPageEdit'
 import Schema from 'schemastery'
 import BasePlugin from '@/plugins/BasePlugin'
 import type { QuickEditUiState } from '@plugin/types/editor'
 import { createCapabilityBadge, createElement } from '@plugin/utils/dom'
 import { parseJsonObject, prettyJson } from '@plugin/utils/result'
 
+@Inject(['bridge', 'modal', 'preferences', 'quickDiff', 'quickPreview', 'toolbox'])
 export class EndWikiQuickEditPlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-quick-edit')
     ctx.set('quickEdit', this)
+  }
 
-    ctx.preferences.registerCustomConfig(
+  protected start() {
+    this.ctx.preferences.registerCustomConfig(
       'endwiki-editor-shell',
       Schema.object({
         'endWiki.editorLang': Schema.string().default('zh_Hans').description('Editor language'),
@@ -20,21 +24,20 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       'editor',
     )
 
-    ctx.inject(['toolbox'], (toolboxCtx: any) => {
-      toolboxCtx.toolbox.addButton({
-        id: 'endwiki-quick-edit',
-        group: 'group1',
-        index: 0,
-        icon: '✏️',
-        tooltip: () => 'Quick Edit',
-        onClick: () => {
-          void this.showModal()
-        },
-      })
+    const toolbox = this.ctx.toolbox
+    toolbox.addButton({
+      id: 'endwiki-quick-edit',
+      group: 'group1',
+      index: 0,
+      icon: '✏️',
+      tooltip: () => 'Quick Edit',
+      onClick: () => {
+        void this.showModal()
+      },
+    })
 
-      this.addDisposeHandler((disposeCtx) => {
-        disposeCtx.toolbox.removeButton('endwiki-quick-edit')
-      })
+    this.addDisposeHandler(() => {
+      toolbox.removeButton('endwiki-quick-edit')
     })
   }
 

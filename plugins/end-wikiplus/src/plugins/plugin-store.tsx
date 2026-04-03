@@ -1,7 +1,9 @@
+import { Inject } from '@/InPageEdit'
 import BasePlugin from '@/plugins/BasePlugin'
 import { capabilityByKey } from '@plugin/constants/capabilities'
 import { createCapabilityBadge, createElement } from '@plugin/utils/dom'
 
+@Inject(['bridge', 'preferences'])
 export class EndWikiPluginStorePlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-plugin-store')

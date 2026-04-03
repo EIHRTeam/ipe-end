@@ -1,5 +1,6 @@
 import { Endpoints } from '@/constants/endpoints.js'
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { promiseWithResolvers } from '@/polyfills/Promise.withResolvers'
 
 declare module '@/InPageEdit' {
   interface InPageEdit {

@@ -1,7 +1,8 @@
 import { Inject, InPageEdit, Schema, Service } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { JSX, ReactElement } from 'jsx-dom'
 import './styles.scss'
-import { ComputeAbleSync } from '@/utils/computeable.js'
+import { computeFallbackSync, ComputeAbleSync } from '@/utils/computeable.js'
 
 declare module '@/InPageEdit' {
   interface InPageEdit {

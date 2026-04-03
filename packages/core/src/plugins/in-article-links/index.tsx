@@ -1,4 +1,5 @@
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { CompareApiRequestOptions } from '../quick-diff/index.js'
 import { QuickEditOptions } from '../quick-edit/index.js'
 import { WikiLinkMetadata } from '@/services/WikiTitleService.js'

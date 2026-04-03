@@ -38,15 +38,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build End Wiki+ plugin
-        run: pnpm --filter @inpageedit/end-wikiplus build
+      - name: Run End Wiki+ smoke
+        run: pnpm --filter @inpageedit/end-wikiplus smoke
 
       - name: Read plugin metadata
         id: plugin-meta
-        working-directory: plugins/end-wikiplus
+        working-directory: plugins/end-wikiplus/artifacts/inpageedit-next-end-wikiplus
         shell: bash
         run: |
-          PKG_VERSION="$(jq -r '.version' package.json)"
+          PKG_VERSION="$(jq -r '.version' ../../package.json)"
           MANIFEST_VERSION="$(jq -r '.version' manifest.json)"
           PLUGIN_ID="$(jq -r '.id' manifest.json)"
           PLUGIN_NAME="$(jq -r '.name' manifest.json)"

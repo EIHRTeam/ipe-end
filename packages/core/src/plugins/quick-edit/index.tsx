@@ -1,4 +1,5 @@
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { IWikiPage } from '@/models/WikiPage'
 import { WatchlistAction } from '@/models/WikiPage/types/WatchlistAction'
 import { IPEModal } from '@inpageedit/modal'

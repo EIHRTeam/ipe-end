@@ -1,3 +1,4 @@
+import { Inject } from '@/InPageEdit'
 import BasePlugin from '@/plugins/BasePlugin'
 import type { InPageEditPreferenceUICategory } from '@/services/PreferencesService'
 import type { CustomIPEModal } from '@/services/ModalService'
@@ -60,6 +61,7 @@ function createField(
   return wrapper
 }
 
+@Inject(['preferences', 'modal', 'toolbox'])
 export class EndWikiPreferencesUIPlugin extends BasePlugin {
   _modal: CustomIPEModal | null = null
   _form: PreferencesFormState | null = null
@@ -67,22 +69,24 @@ export class EndWikiPreferencesUIPlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-preferences-ui')
     ctx.set('preferencesUI', this)
+  }
 
-    ctx.preferences.defineCategory({
+  protected start(): void {
+    this.ctx.preferences.defineCategory({
       name: 'general',
       label: 'General',
       description: 'End Wiki+ shell preferences',
       autoGenerateForm: true,
     })
 
-    ctx.preferences.defineCategory({
+    this.ctx.preferences.defineCategory({
       name: 'editor',
       label: 'Editor',
       description: 'Quick Edit shell preferences',
       autoGenerateForm: true,
     })
 
-    ctx.preferences.defineCategory({
+    this.ctx.preferences.defineCategory({
       name: 'capabilities',
       label: 'Capabilities',
       description: 'Current End Wiki+ adapter support matrix',
@@ -99,7 +103,7 @@ export class EndWikiPreferencesUIPlugin extends BasePlugin {
       },
     })
 
-    ctx.preferences.defineCategory({
+    this.ctx.preferences.defineCategory({
       name: 'about',
       label: 'About',
       description: 'Adapter notes',
@@ -121,25 +125,22 @@ export class EndWikiPreferencesUIPlugin extends BasePlugin {
       },
     })
 
-    ctx.inject(['toolbox'], (toolboxCtx: any) => {
-      toolboxCtx.toolbox.addButton({
-        id: 'endwiki-preferences',
-        group: 'group2',
-        index: 99,
-        icon: '⚙️',
-        tooltip: () => 'Preferences',
-        onClick: () => {
-          void this.showModal()
-        },
-      })
-
-      this.addDisposeHandler((disposeCtx) => {
-        disposeCtx.toolbox.removeButton('endwiki-preferences')
-      })
+    const toolbox = this.ctx.toolbox
+    toolbox.addButton({
+      id: 'endwiki-preferences',
+      group: 'group2',
+      index: 99,
+      icon: '⚙️',
+      tooltip: () => 'Preferences',
+      onClick: () => {
+        void this.showModal()
+      },
     })
-  }
 
-  protected start(): void {
+    this.addDisposeHandler(() => {
+      toolbox.removeButton('endwiki-preferences')
+    })
+
     this.ctx.on('preferences/changed', (payload: { input: Record<string, unknown> }) => {
       this.mergeFormValue(payload.input)
     })

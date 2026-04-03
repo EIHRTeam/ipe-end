@@ -1,5 +1,6 @@
 import { ReactNode } from 'jsx-dom'
 import { JSX } from 'jsx-dom/jsx-runtime'
+import { promiseWithResolvers } from '@/polyfills/Promise.withResolvers'
 import styles from './styles.module.sass'
 
 export type MBoxProps = {

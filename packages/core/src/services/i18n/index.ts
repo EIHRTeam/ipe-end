@@ -1,4 +1,5 @@
 import { Inject, InPageEdit, Logger, Schema, Service } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { I18nManager as I18nManager } from './I18nManager.js'
 import { Endpoints } from '@/constants/endpoints.js'
 import { AbstractIPEStorageManager } from '../storage/index.js'

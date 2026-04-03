@@ -48,6 +48,37 @@ export class EndWikiPlusApp extends Context {
     this.plugin(ModalService as never)
     this.plugin(PreferencesService as never)
     this.plugin(ThemeService as never)
+    this.markServiceAsBuiltIn([
+      'bridge',
+      '$',
+      '$raw',
+      '$$',
+      '$$raw',
+      'modal',
+      'preferences',
+      'storage',
+      'theme',
+      'wiki',
+      'getUrl',
+      'getSciprtUrl',
+      'getMainpageUrl',
+    ])
+  }
+
+  private markServiceAsBuiltIn(services: string[]) {
+    const internalKey = (this.constructor as typeof Context & { internal?: symbol }).internal
+    if (!internalKey || !Array.isArray(services) || services.length === 0) return this
+    const internal = (this as Record<PropertyKey, Record<string, { type?: string; builtin?: boolean }>>)[
+      internalKey
+    ]
+    if (!internal) return this
+    for (const name of services) {
+      const entry = internal[name]
+      if (entry?.type === 'service') {
+        entry.builtin = true
+      }
+    }
+    return this
   }
 
   async withInject(inject: string[]) {

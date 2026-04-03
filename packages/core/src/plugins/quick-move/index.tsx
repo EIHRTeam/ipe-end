@@ -1,4 +1,5 @@
 import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import { IPEModal } from '@inpageedit/modal'
 
 declare module '@/InPageEdit' {
