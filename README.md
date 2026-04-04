@@ -2,7 +2,7 @@
 
 [<img src="https://www.ipe.wiki/images/logo/ipe-next-uwu.png" width="280" alt="InPageEdit Logo">](https://www.ipe.wiki)
 
-# InPageEdit NEXT
+# InPageEdit NEXT for Endfield Wikiplus
 
 🚀 MediaWiki 的模块化、可扩展超级增强插件
 
