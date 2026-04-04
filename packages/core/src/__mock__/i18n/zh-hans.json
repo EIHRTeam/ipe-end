@@ -69,7 +69,7 @@
   "plugin-store.tags.installed": "✓",
   "Plugins": "插件",
   "Preferences Saved": "首选项已保存",
-  "prefs.about.copyright": "InPageEdit-NEXT 版权所有 © 2025-{{ new Date().getFullYear() }} dragon-fish",
+  "prefs.about.copyright": "InPageEdit-NEXT 版权所有 © 2025-{{ new Date().getFullYear() }} dragon-fish\nCopyright © 2026-{{ new Date().getFullYear() }} EIHRTeam",
   "prefs.about.description": "关于 InPageEdit",
   "prefs.about.header": "✏️ InPageEdit NEXT",
   "prefs.about.intro": "🚀 模块化、可扩展的 MediaWiki 超级增强插件。",

@@ -69,13 +69,13 @@ pnpm build
 
 The root build now follows the `@inpageedit/core` dependency graph and builds the workspace packages required by core first, instead of assuming their `dist/` outputs already exist.
 
-### End Wiki+ host adapter
+### Endfield Wiki⁺ host adapter
 
-This repository now also contains a host-first external plugin package for End Wiki+:
+This repository now also contains a host-first external plugin package for Endfield Wiki⁺:
 
 | package | description | directory |
 | --- | --- | --- |
-| @inpageedit/end-wikiplus | End Wiki+ adapter that keeps the IPE shell UI and connects it to the End Wiki+ plugin host APIs | [plugins/end-wikiplus](plugins/end-wikiplus) |
+| @inpageedit/end-wikiplus | Endfield Wiki⁺ adapter that keeps the IPE shell UI and connects it to the Endfield Wiki⁺ plugin host APIs | [plugins/end-wikiplus](plugins/end-wikiplus) |
 
 Build it separately with:
 
@@ -91,9 +91,9 @@ Current artifact output:
 
 Notes:
 
-- The End Wiki+ package is not a MediaWiki autoload entry.
+- The Endfield Wiki⁺ package is not a MediaWiki autoload entry.
 - It keeps the IPE shell structures such as toolbox / quick-edit / quick-diff / quick-preview / preferences-ui / plugin-store.
-- It uses the End Wiki+ host APIs for page context, storage, plugin listing, and wiki submit / draft flows.
+- It uses the Endfield Wiki⁺ host APIs for page context, storage, plugin listing, and wiki submit / draft flows.
 
 ---
 

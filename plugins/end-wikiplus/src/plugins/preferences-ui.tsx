@@ -67,7 +67,7 @@ export class EndWikiPreferencesUIPlugin extends BasePlugin {
     ctx.preferences.defineCategory({
       name: 'capabilities',
       label: $`Capabilities`,
-      description: $`Current End Wiki+ adapter support matrix.`,
+      description: $`Current Endfield Wiki⁺ adapter support matrix.`,
       index: 90,
       autoGenerateForm: false,
       customRenderer: () =>
@@ -90,9 +90,9 @@ export class EndWikiPreferencesUIPlugin extends BasePlugin {
       customRenderer: () => {
         return (
           <section className="theme-ipe-prose">
-            <h2>✏️ InPageEdit NEXT for End Wiki+</h2>
+            <h2>✏️ InPageEdit NEXT for Endfield Wiki⁺</h2>
             <p>
-              {$`This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.`}
+              {$`This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.`}
             </p>
             <h3>{$`Current Status`}</h3>
             <ul>

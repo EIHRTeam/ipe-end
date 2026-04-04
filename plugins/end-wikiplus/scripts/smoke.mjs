@@ -73,7 +73,7 @@ const ok = (data) => ({ ok: true, data })
 const currentItem = { itemId: '1', name: 'Test', lang: 'zh_Hans' }
 const selfPlugin = {
   id: 'inpageedit-next-end-wikiplus',
-  name: 'InPageEdit NEXT for End Wiki+',
+  name: 'InPageEdit NEXT for Endfield Wiki⁺',
   version: '0.1.0',
   enabled: true,
   pages: ['wiki-renderer'],

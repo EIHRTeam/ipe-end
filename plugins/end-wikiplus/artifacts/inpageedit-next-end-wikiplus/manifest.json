@@ -1,9 +1,9 @@
 {
   "manifestVersion": 1,
   "id": "inpageedit-next-end-wikiplus",
-  "name": "InPageEdit NEXT for End Wiki+",
+  "name": "InPageEdit NEXT for Endfield Wiki⁺",
   "version": "0.1.0",
-  "description": "End Wiki+ host-first InPageEdit plugin package.",
+  "description": "Endfield Wiki⁺ host-first InPageEdit plugin package.",
   "entry": "dist/index.js",
   "styles": ["dist/styles.css"],
   "permissions": [

@@ -39,7 +39,7 @@ export class EndWikiPluginStorePlugin extends BasePlugin {
           ]),
           createElement('p', {
             className: 'endwiki-ipe-muted',
-            text: $`Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.`,
+            text: $`Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.`,
           }),
         ])
       },

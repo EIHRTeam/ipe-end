@@ -6,7 +6,7 @@ type EndWikiPageSnapshot = {
 }
 
 function makeUserInfo(session: HostAuthSessionSummary | null) {
-  const fallbackName = session?.wikiProfileNickname || 'End Wiki+ User'
+  const fallbackName = session?.wikiProfileNickname || 'Endfield Wiki⁺ User'
   const fallbackId = Number(session?.wikiProfileUserId || 0)
   return {
     id: fallbackId,
@@ -28,12 +28,12 @@ function makeUserInfo(session: HostAuthSessionSummary | null) {
 export class EndWikiMetadataService {
   public readonly siteInfo = {
     general: {
-      mainpage: 'End Wiki+',
+      mainpage: 'Endfield Wiki⁺',
       base: window.location.origin,
-      sitename: 'End Wiki+',
+      sitename: 'Endfield Wiki⁺',
       mainpageisdomainroot: true,
       logo: '',
-      generator: 'End Wiki+ Host',
+      generator: 'Endfield Wiki⁺ Host',
       phpversion: '',
       phpsapi: '',
       dbtype: '',

@@ -14,9 +14,9 @@ const CORE_LANGUAGE_DATA = {
 const ADAPTER_LANGUAGE_DATA = {
   en: {
     Capabilities: 'Capabilities',
-    'Current End Wiki+ adapter support matrix.': 'Current End Wiki+ adapter support matrix.',
-    'This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.':
-      'This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.',
+    'Current Endfield Wiki⁺ adapter support matrix.': 'Current Endfield Wiki⁺ adapter support matrix.',
+    'This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.':
+      'This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.',
     'Current Status': 'Current Status',
     'Floating toolbox, preferences UI and quick edit modal now follow original IPE code paths.':
       'Floating toolbox, preferences UI and quick edit modal now follow original IPE code paths.',
@@ -35,14 +35,14 @@ const ADAPTER_LANGUAGE_DATA = {
     'Host-local plugin registry view': 'Host-local plugin registry view',
     enabled: 'enabled',
     disabled: 'disabled',
-    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.':
-      'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.',
+    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.':
+      'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.',
   },
   ja: {
     Capabilities: '機能',
-    'Current End Wiki+ adapter support matrix.': '現在の End Wiki+ アダプター対応状況です。',
-    'This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.':
-      'このアダプターは元の IPE 設定 UI を維持しつつ、Wiki 操作を End Wiki+ のホストブリッジに移します。',
+    'Current Endfield Wiki⁺ adapter support matrix.': '現在の Endfield Wiki⁺ アダプター対応状況です。',
+    'This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.':
+      'このアダプターは元の IPE 設定 UI を維持しつつ、Wiki 操作を Endfield Wiki⁺ のホストブリッジに移します。',
     'Current Status': '現在の状態',
     'Floating toolbox, preferences UI and quick edit modal now follow original IPE code paths.':
       'フローティングツールボックス、設定 UI、クイック編集モーダルは元の IPE コードパスに沿っています。',
@@ -61,14 +61,14 @@ const ADAPTER_LANGUAGE_DATA = {
     'Host-local plugin registry view': 'ホスト内ローカルのプラグインレジストリ表示',
     enabled: '有効',
     disabled: '無効',
-    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.':
-      'この段階では、リモートレジストリ・npm インストール・オンラインダウンロード操作は制限事項として表示のみ残し、End Wiki+ ホストでは無効のままです。',
+    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.':
+      'この段階では、リモートレジストリ・npm インストール・オンラインダウンロード操作は制限事項として表示のみ残し、Endfield Wiki⁺ ホストでは無効のままです。',
   },
   'zh-hans': {
     Capabilities: '能力',
-    'Current End Wiki+ adapter support matrix.': '当前 End Wiki+ 适配器能力矩阵。',
-    'This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.':
-      '这个适配器保留原版 IPE 设置外壳，并将 Wiki 操作迁移到 End Wiki+ 宿主桥接层。',
+    'Current Endfield Wiki⁺ adapter support matrix.': '当前 Endfield Wiki⁺ 适配器能力矩阵。',
+    'This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.':
+      '这个适配器保留原版 IPE 设置外壳，并将 Wiki 操作迁移到 Endfield Wiki⁺ 宿主桥接层。',
     'Current Status': '当前状态',
     'Floating toolbox, preferences UI and quick edit modal now follow original IPE code paths.':
       '悬浮工具箱、设置界面和快速编辑弹窗现在都走原版 IPE 代码路径。',
@@ -87,14 +87,14 @@ const ADAPTER_LANGUAGE_DATA = {
     'Host-local plugin registry view': '宿主本地插件注册表视图',
     enabled: '已启用',
     disabled: '已禁用',
-    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.':
-      '远程注册表、npm 安装和在线下载操作在这一阶段仅作为限制说明保留展示，在 End Wiki+ 宿主中仍保持禁用。',
+    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.':
+      '远程注册表、npm 安装和在线下载操作在这一阶段仅作为限制说明保留展示，在 Endfield Wiki⁺ 宿主中仍保持禁用。',
   },
   'zh-hant': {
     Capabilities: '能力',
-    'Current End Wiki+ adapter support matrix.': '目前 End Wiki+ 適配器能力矩陣。',
-    'This adapter keeps the original IPE settings shell and moves wiki operations onto the End Wiki+ host bridge.':
-      '這個適配器保留原版 IPE 設定外殼，並將 Wiki 操作遷移到 End Wiki+ 宿主橋接層。',
+    'Current Endfield Wiki⁺ adapter support matrix.': '目前 Endfield Wiki⁺ 適配器能力矩陣。',
+    'This adapter keeps the original IPE settings shell and moves wiki operations onto the Endfield Wiki⁺ host bridge.':
+      '這個適配器保留原版 IPE 設定外殼，並將 Wiki 操作遷移到 Endfield Wiki⁺ 宿主橋接層。',
     'Current Status': '目前狀態',
     'Floating toolbox, preferences UI and quick edit modal now follow original IPE code paths.':
       '懸浮工具箱、設定介面和快速編輯彈窗現在都沿用原版 IPE 程式碼路徑。',
@@ -113,8 +113,8 @@ const ADAPTER_LANGUAGE_DATA = {
     'Host-local plugin registry view': '宿主本地插件註冊表檢視',
     enabled: '已啟用',
     disabled: '已停用',
-    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.':
-      '遠端註冊表、npm 安裝與線上下載操作在這個階段僅保留為限制說明，在 End Wiki+ 宿主中仍維持停用。',
+    'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the Endfield Wiki⁺ host.':
+      '遠端註冊表、npm 安裝與線上下載操作在這個階段僅保留為限制說明，在 Endfield Wiki⁺ 宿主中仍維持停用。',
   },
 } as const
 

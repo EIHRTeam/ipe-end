@@ -12,7 +12,7 @@ import { EndWikiPluginStorePlugin } from '@plugin/plugins/plugin-store'
 import { pluginRuntimeDebug } from '@plugin/utils/debug'
 
 const bootApp = async (host: HostPluginContext) => {
-  pluginRuntimeDebug.info('boot', '开始启动 End Wiki+ IPE 插件')
+  pluginRuntimeDebug.info('boot', '开始启动 Endfield Wiki⁺ IPE 插件')
   const bridge = new EndWikiHostBridge(host)
   const bootstrap = await bridge.bootstrap()
   pluginRuntimeDebug.debug('boot', 'bridge.bootstrap 完成', {
@@ -104,7 +104,7 @@ const bootApp = async (host: HostPluginContext) => {
       'EndWikiQuickEditPlugin',
     ],
   })
-  pluginRuntimeDebug.info('boot', 'End Wiki+ IPE 插件启动完成', {
+  pluginRuntimeDebug.info('boot', 'Endfield Wiki⁺ IPE 插件启动完成', {
     toolboxExists: Boolean(document.querySelector('#ipe-edit-toolbox')),
     activeFlag: document.body.getAttribute('data-end-wikiplus-ipe'),
   })
@@ -120,12 +120,12 @@ const moduleExport: HostPluginModule = {
     const { app, bridge } = await bootApp(host)
 
     return async () => {
-      pluginRuntimeDebug.info('boot', '开始停用 End Wiki+ IPE 插件')
+      pluginRuntimeDebug.info('boot', '开始停用 Endfield Wiki⁺ IPE 插件')
       await bridge.dispose()
       document.body.removeAttribute('data-end-wikiplus-ipe')
       await (app as any).dispose?.()
       await (app as any).stop?.()
-      pluginRuntimeDebug.info('boot', 'End Wiki+ IPE 插件已停用', {
+      pluginRuntimeDebug.info('boot', 'Endfield Wiki⁺ IPE 插件已停用', {
         toolboxExists: Boolean(document.querySelector('#ipe-edit-toolbox')),
       })
     }

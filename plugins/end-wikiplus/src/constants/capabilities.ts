@@ -12,7 +12,7 @@ export const CAPABILITY_MATRIX: CapabilityDescriptor[] = [
     key: 'quick-edit',
     label: 'Quick Edit',
     status: 'supported',
-    summary: 'Edits End Wiki+ item JSON through host wiki.update-info / submit / draft-clear APIs.',
+    summary: 'Edits Endfield Wiki⁺ item JSON through host wiki.update-info / submit / draft-clear APIs.',
   },
   {
     key: 'quick-diff',

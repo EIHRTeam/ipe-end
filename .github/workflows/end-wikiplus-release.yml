@@ -1,4 +1,4 @@
-name: Release End Wiki+ Plugin
+name: Release Endfield Wiki⁺ Plugin
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run End Wiki+ smoke
+      - name: Run Endfield Wiki⁺ smoke
         run: pnpm --filter @inpageedit/end-wikiplus smoke
 
       - name: Read plugin metadata
