@@ -4,6 +4,7 @@ import type {
   HostPluginContext,
   HostPluginSummary,
 } from '@plugin/types/host'
+import { pluginRuntimeDebug } from '@plugin/utils/debug'
 import { isRecord, unwrapHostResult } from '@plugin/utils/result'
 
 export interface EndWikiBootstrapSnapshot {
@@ -37,10 +38,16 @@ export class EndWikiHostBridge {
   constructor(readonly host: HostPluginContext) {}
 
   async bootstrap(): Promise<EndWikiBootstrapSnapshot> {
-    const [page, currentItem, me, selfPlugin] = await Promise.all([
+    pluginRuntimeDebug.info('bootstrap', '开始拉取宿主启动快照')
+
+    const mePromise = this.host.wiki
+      .fetchMe()
+      .then((result) => extractItemPayload(unwrapHostResult(result)))
+      .catch(() => null)
+
+    const [page, currentItem, selfPlugin] = await Promise.all([
       this.host.page.getContext().then((result) => unwrapHostResult(result)),
       this.host.wiki.getCurrentItem().then((result) => unwrapHostResult(result)),
-      this.host.wiki.fetchMe().then((result) => extractItemPayload(unwrapHostResult(result))).catch(() => null),
       this.host.plugins.getSelf().then((result) => unwrapHostResult(result)),
     ])
 
@@ -54,16 +61,31 @@ export class EndWikiHostBridge {
 
     this.pageContext = page
     this.currentItem = currentItem
-    this.me = me
+    this.me = null
     this.session = session
     this.selfPlugin = selfPlugin
 
     await this.subscribeToHostEvents()
 
+    void mePromise.then((me) => {
+      this.me = me
+      pluginRuntimeDebug.debug('bootstrap', '宿主用户信息已刷新', {
+        hasMe: Boolean(me),
+      })
+    })
+
+    pluginRuntimeDebug.info('bootstrap', '宿主启动快照已就绪', {
+      routeName: page.routeName,
+      pageKind: page.kind,
+      wikiItemId: page.wikiItemId,
+      hasCurrentItem: Boolean(currentItem),
+      hasSession: Boolean(session?.hasSession),
+    })
+
     return {
       page,
       currentItem,
-      me,
+      me: null,
       session,
       selfPlugin,
     }

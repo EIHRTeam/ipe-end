@@ -3,17 +3,18 @@ import BasePlugin from '@/plugins/BasePlugin'
 import { capabilityByKey } from '@plugin/constants/capabilities'
 import { createCapabilityBadge, createElement } from '@plugin/utils/dom'
 
-@Inject(['bridge', 'preferences'])
+@Inject(['bridge', 'preferences', '$'])
 export class EndWikiPluginStorePlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-plugin-store')
   }
 
   protected start() {
+    const $ = this.ctx.$
     this.ctx.preferences.defineCategory({
       name: 'plugin-store',
-      label: 'Plugin Store',
-      description: 'Host-local plugin registry view',
+      label: $`Plugin Store`,
+      description: $`Host-local plugin registry view`,
       autoGenerateForm: false,
       customRenderer: async () => {
         const capability = capabilityByKey('plugin-store')
@@ -31,15 +32,14 @@ export class EndWikiPluginStorePlugin extends BasePlugin {
                 createElement('strong', { text: `${plugin.name} (${plugin.version})` }),
                 createElement('p', {
                   className: 'endwiki-ipe-muted',
-                  text: `${plugin.id} · ${plugin.enabled ? 'enabled' : 'disabled'}`,
+                  text: `${plugin.id} · ${plugin.enabled ? $`enabled` : $`disabled`}`,
                 }),
               ]),
             ),
           ]),
           createElement('p', {
             className: 'endwiki-ipe-muted',
-            text:
-              'Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.',
+            text: $`Remote registry, npm install and online download actions stay visible as a documented limitation in this phase and will remain disabled in the End Wiki+ host.`,
           }),
         ])
       },

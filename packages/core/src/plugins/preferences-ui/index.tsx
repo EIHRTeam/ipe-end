@@ -148,6 +148,7 @@ export class PluginPreferencesUI extends BasePlugin {
     const modal = this.ctx.modal.show({
       className: 'ipe-preference compact-buttons',
       sizeClass: 'small',
+      fixedHeight: true,
       outSideClose: false,
       center: true,
       title: `${$`InPageEdit Preferences`} (${this.ctx.version})`,
@@ -160,12 +161,7 @@ export class PluginPreferencesUI extends BasePlugin {
 
     modal.get$window().classList.add('dialog')
 
-    const root = (
-      <div
-        id="ipe-preferences-app"
-        style={{ minHeight: 'calc(85dvh - var(--ipe-modal-spacing) * 2)' }}
-      ></div>
-    )
+    const root = <div id="ipe-preferences-app" style={{ height: '100%' }}></div>
     modal.setContent(root as HTMLElement)
 
     this.ctx.emit('preferences-ui/modal-shown', {

@@ -35,12 +35,35 @@ function hasAnyClass(elements: Element[], classNames: string[]): boolean {
   return elements.some((el) => classNames.some((cls) => el.classList.contains(cls)))
 }
 
+function bindMediaQueryChange(
+  mediaQueryList: MediaQueryList,
+  handler: (event: MediaQueryListEvent) => void
+) {
+  if (typeof mediaQueryList.addEventListener === 'function') {
+    mediaQueryList.addEventListener('change', handler)
+    return () => {
+      mediaQueryList.removeEventListener('change', handler)
+    }
+  }
+
+  if (typeof mediaQueryList.addListener === 'function') {
+    mediaQueryList.addListener(handler)
+    return () => {
+      if (typeof mediaQueryList.removeListener === 'function') {
+        mediaQueryList.removeListener(handler)
+      }
+    }
+  }
+
+  return () => {}
+}
+
 export function createClassBasedAdapter(config: ClassBasedAdapterConfig): SiteThemeAdapter {
   const target = config.target ?? 'both'
   const systemClasses = config.systemClasses ?? []
   let observer: MutationObserver | null = null
   let mediaQuery: MediaQueryList | null = null
-  let mediaQueryHandler: (() => void) | null = null
+  let unbindMediaQueryChange: (() => void) | null = null
 
   return {
     name: config.name,
@@ -69,19 +92,16 @@ export function createClassBasedAdapter(config: ClassBasedAdapterConfig): SiteTh
       }
       if (systemClasses.length > 0) {
         mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        mediaQueryHandler = onChange
-        mediaQuery.addEventListener('change', mediaQueryHandler)
+        unbindMediaQueryChange = bindMediaQueryChange(mediaQuery, onChange)
       }
     },
 
     stopObserving(): void {
       observer?.disconnect()
       observer = null
-      if (mediaQuery && mediaQueryHandler) {
-        mediaQuery.removeEventListener('change', mediaQueryHandler)
-        mediaQuery = null
-        mediaQueryHandler = null
-      }
+      unbindMediaQueryChange?.()
+      unbindMediaQueryChange = null
+      mediaQuery = null
     },
   }
 }

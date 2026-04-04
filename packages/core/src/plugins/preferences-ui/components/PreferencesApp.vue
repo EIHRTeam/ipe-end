@@ -43,6 +43,8 @@ import {
   watch,
 } from 'vue'
 import { useIPE } from '@/utils/vueHooks'
+import { noop } from '@/utils/noop'
+import { deepToRaw } from '@/utils/vueReactivity'
 import type {
   InPageEditPreferenceUIRegistryItem,
   InPageEditPreferenceUICategory,
@@ -152,6 +154,11 @@ watch(
 
 <style scoped lang="scss">
 .tabbar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+
   .tabbar-tabs {
     --border-color: #efefef;
     --tab-color: #666;
@@ -177,6 +184,12 @@ watch(
       }
     }
   }
+
+  .tabbar-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
 }
 
 schema-form {
@@ -187,6 +200,8 @@ schema-form {
 
 <style lang="scss">
 #preferences-ui-app {
+  height: 100%;
+
   .schema-form-item.field {
     border: 0;
   }

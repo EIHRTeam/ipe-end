@@ -45,13 +45,41 @@ export class ThemeService extends Service {
 
   private readonly _handleSystemThemeChange = this._onSystemThemeChange.bind(this)
 
+  private bindMediaQueryChange(
+    mediaQueryList: MediaQueryList,
+    handler: (event: MediaQueryListEvent) => void
+  ) {
+    if (typeof mediaQueryList.addEventListener === 'function') {
+      mediaQueryList.addEventListener('change', handler)
+      return () => {
+        mediaQueryList.removeEventListener('change', handler)
+      }
+    }
+
+    if (typeof mediaQueryList.addListener === 'function') {
+      mediaQueryList.addListener(handler)
+      return () => {
+        if (typeof mediaQueryList.removeListener === 'function') {
+          mediaQueryList.removeListener(handler)
+        }
+      }
+    }
+
+    return () => {}
+  }
+
+  private _unbindSystemThemeChange: (() => void) | null = null
+
   constructor(public ctx: InPageEdit) {
     super(ctx, 'theme', false)
   }
 
   protected async start() {
     this._mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)')
-    this._mediaQueryList.addEventListener('change', this._handleSystemThemeChange)
+    this._unbindSystemThemeChange = this.bindMediaQueryChange(
+      this._mediaQueryList,
+      this._handleSystemThemeChange
+    )
 
     // Register built-in site theme adapters
     for (const config of BUILTIN_SITE_ADAPTERS) {
@@ -68,9 +96,8 @@ export class ThemeService extends Service {
   }
 
   protected stop() {
-    if (this._mediaQueryList) {
-      this._mediaQueryList.removeEventListener('change', this._handleSystemThemeChange)
-    }
+    this._unbindSystemThemeChange?.()
+    this._unbindSystemThemeChange = null
     this.activeAdapter?.stopObserving()
   }
 

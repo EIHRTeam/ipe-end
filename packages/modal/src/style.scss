@@ -3,7 +3,7 @@
    Customize via :root { --ipe-modal-* } or on a container scope
    -------------------------------------------------------------------------- */
 :root {
-  --ipe-modal-z: 1000;
+  --ipe-modal-z: 7000;
   --ipe-modal-backdrop-bg: rgba(0, 0, 0, 0.5);
   --ipe-modal-bg: #ffffff;
   --ipe-modal-secondary-bg: #eaecf0;
@@ -176,6 +176,19 @@ body.ipe-modal-no-scroll {
 /* 固定高度模式（TS 会加上 .is-fixed-height） */
 .ipe-modal-modal__window.is-fixed-height {
   height: min(var(--ipe-modal-window-max-h), 80vh);
+  display: flex;
+  flex-direction: column;
+}
+
+.ipe-modal-modal__window.is-fixed-height .ipe-modal-modal__header,
+.ipe-modal-modal__window.is-fixed-height .ipe-modal-modal__footer {
+  flex: 0 0 auto;
+}
+
+.ipe-modal-modal__window.is-fixed-height .ipe-modal-modal__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 /* -------------------------------- Header ----------------------------------- */
@@ -251,7 +264,7 @@ body.ipe-modal-no-scroll {
 /* -------------------------------- Toast ------------------------------------ */
 .ipe-modal-toast-container {
   position: fixed;
-  z-index: 2000;
+  z-index: 8000;
   display: flex;
   flex-direction: column;
   gap: 8px;

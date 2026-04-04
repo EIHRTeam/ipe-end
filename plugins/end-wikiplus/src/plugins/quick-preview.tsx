@@ -1,48 +1,131 @@
-import { Inject } from '@/InPageEdit'
+import { Inject, InPageEdit, Schema } from '@/InPageEdit'
+import { RegisterPreferences } from '@/decorators/Preferences'
 import BasePlugin from '@/plugins/BasePlugin'
-import type { QuickEditUiState } from '@plugin/types/editor'
+import { ProgressBar } from '@/components'
+import { IPEModal, IPEModalOptions } from '@inpageedit/modal'
+import type { EndWikiQuickEditEventPayload, EndWikiQuickEditWikiPage } from '@plugin/plugins/quick-edit'
 import { capabilityByKey } from '@plugin/constants/capabilities'
-import { createCapabilityBadge, createElement } from '@plugin/utils/dom'
 
-@Inject(['modal'])
+interface EndWikiQuickPreviewEventPayload {
+  ctx: InPageEdit
+  modal: IPEModal
+  wikiPage: EndWikiQuickEditWikiPage
+  text: string
+}
+
+declare module '@/InPageEdit' {
+  interface InPageEdit {
+    quickPreview: EndWikiQuickPreviewPlugin & {
+      (
+        ...args: Parameters<EndWikiQuickPreviewPlugin['showModal']>
+      ): ReturnType<EndWikiQuickPreviewPlugin['showModal']>
+    }
+  }
+  interface Events {
+    'quick-preview/show-modal'(payload: EndWikiQuickPreviewEventPayload): void
+  }
+  interface PreferencesMap {
+    'quickPreview.keyshortcut': string
+  }
+}
+
+@Inject(['modal', 'preferences', '$'])
+@RegisterPreferences(
+  Schema.object({
+    'quickPreview.keyshortcut': Schema.string()
+      .default('ctrl-i')
+      .role('keyshortcut')
+      .description('Key shortcut to open quick preview in quick edit modal'),
+  })
+    .extra('category', 'editor')
+    .description('Quick preview options'),
+)
 export class EndWikiQuickPreviewPlugin extends BasePlugin {
   constructor(public ctx: any) {
     super(ctx, {}, 'endwiki-quick-preview')
-    ctx.set('quickPreview', this)
+    this.ctx.set('quickPreview', this)
   }
 
-  showModal(state: QuickEditUiState) {
+  protected start(): Promise<void> | void {
+    this.ctx.on('quick-edit/wiki-page', this.injectQuickEdit.bind(this))
+  }
+
+  showModal(
+    text: string,
+    wikiPage: EndWikiQuickEditWikiPage,
+    modal?: IPEModal,
+    modalOptions?: Partial<IPEModalOptions>,
+  ) {
+    const { $ } = this.ctx
     const capability = capabilityByKey('quick-preview')
-    const modal = this.ctx.modal.show({
-      className: 'endwiki-quick-preview',
-      sizeClass: 'small',
-      center: true,
-      title: `Quick Preview${state.itemName ? ` · ${state.itemName}` : ''}`,
-      content: createElement('div'),
+
+    if (!modal || modal.isDestroyed) {
+      modal = this.ctx.modal
+        .createObject({
+          className: 'in-page-edit ipe-quickPreview',
+          sizeClass: 'large',
+          center: false,
+          ...modalOptions,
+        })
+        .init()
+    }
+
+    modal.show()
+    modal.setTitle($`Preview - Loading...`)
+    modal.setContent(<ProgressBar /> as HTMLElement)
+    modal.bringToFront()
+    this.ctx.emit('quick-preview/show-modal', {
+      ctx: this.ctx,
+      text,
+      modal,
+      wikiPage,
     })
 
+    modal.setTitle($(wikiPage.pageInfo.title)`Preview - {{ $1 }}`)
     modal.setContent(
-      createElement('section', { className: 'endwiki-ipe-stack' }, [
-        createCapabilityBadge('quick-preview'),
-        createElement('p', {
-          text: capability?.summary || 'Preview is not available in the host yet.',
-        }),
-        createElement('p', {
-          className: 'endwiki-ipe-muted',
-          text:
-            'The button is kept in place so the UI structure stays aligned with IPE, but the real preview flow will be wired after the host exposes a preview surface.',
-        }),
-      ]),
+      (
+        <section className="endwiki-ipe-stack">
+          <p className="endwiki-ipe-muted">
+            {capability?.summary || 'Preview is not available in the host yet.'}
+          </p>
+          <pre>{text}</pre>
+        </section>
+      ) as HTMLElement,
     )
 
-    modal.setButtons([
-      {
-        label: 'Close',
-        className: 'is-primary is-ghost',
-        method: () => modal.close(),
-      },
-    ])
-
     return modal
+  }
+
+  private async injectQuickEdit({ modal, wikiPage }: EndWikiQuickEditEventPayload) {
+    const { $ } = this.ctx
+    let latestPreviewModal: IPEModal | undefined
+    modal.addButton(
+      {
+        label: $`Preview`,
+        side: 'left',
+        className: 'btn btn-secondary',
+        keyPress: (await this.ctx.preferences.get('quickPreview.keyshortcut')) || undefined,
+        method: () => {
+          const text =
+            (modal.get$content().querySelector<HTMLTextAreaElement>('textarea[name="text"]')
+              ?.value as string) || ''
+
+          latestPreviewModal = this.showModal(
+            text,
+            wikiPage,
+            latestPreviewModal,
+            {
+              backdrop: false,
+              draggable: true,
+            },
+          )
+        },
+      },
+      1,
+    )
+    modal.on(modal.Event.Close, () => {
+      latestPreviewModal?.destroy()
+      latestPreviewModal = undefined
+    })
   }
 }

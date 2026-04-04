@@ -3,6 +3,7 @@ import { RegisterPreferences } from '@/decorators/Preferences'
 import { I18nManager as I18nManager } from './I18nManager.js'
 import { Endpoints } from '@/constants/endpoints.js'
 import { AbstractIPEStorageManager } from '../storage/index.js'
+import { paramCase } from '@/utils/string'
 
 export interface I18nIndexV1 {
   manifest_version: 1

@@ -31,14 +31,23 @@ globalThis.SVGElement = window.SVGElement
 globalThis.localStorage = window.localStorage
 globalThis.sessionStorage = window.sessionStorage
 Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true })
+globalThis.customElements =
+  window.customElements ||
+  ({
+    define() {},
+    get() {
+      return undefined
+    },
+    whenDefined() {
+      return Promise.resolve()
+    },
+  })
 
 window.matchMedia =
   window.matchMedia ||
   (() => ({
     matches: false,
     media: '',
-    addEventListener() {},
-    removeEventListener() {},
     addListener() {},
     removeListener() {},
     onchange: null,
@@ -165,11 +174,41 @@ async function main() {
 
   assert.equal(window.document.body.getAttribute('data-end-wikiplus-ipe'), 'active')
   assert.deepEqual(buttonIds, [
-    'ipe-toolbox__endwiki-quick-edit-btn',
-    'ipe-toolbox__endwiki-preferences-btn',
+    'ipe-toolbox__quick-edit-btn',
+    'ipe-toolbox__preferences-btn',
     'toolbox-toggler',
   ])
   assert.equal(typeof cleanup, 'function')
+
+  window.document.querySelector('#ipe-toolbox__quick-edit-btn')?.dispatchEvent(
+    new window.MouseEvent('click', { bubbles: true }),
+  )
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  assert.ok(window.document.querySelector('.ipe-modal-modal.is-centered'))
+  assert.ok(window.document.querySelector('.ipe-quickEdit__form'))
+  assert.ok(window.document.querySelector('textarea#wpTextbox1'))
+  assert.ok(window.document.querySelector('input[name="summary"]'))
+  assert.ok(window.document.body.textContent?.includes('Follow MW preferences'))
+  assert.ok(!window.document.body.textContent?.includes('watchlist.preferences'))
+
+  window.document.querySelector('#ipe-toolbox__preferences-btn')?.dispatchEvent(
+    new window.MouseEvent('click', { bubbles: true }),
+  )
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  assert.ok(window.document.querySelectorAll('.ipe-modal-modal.is-centered').length >= 2)
+  assert.ok(window.document.querySelector('#ipe-preferences-app'))
+  assert.ok(window.document.body.textContent?.includes('General'))
+  assert.ok(!window.document.body.textContent?.includes('prefs.general.label'))
+
+  window.document
+    .querySelector('.ipe-modal-modal__window.ipe-preference .ipe-modal-btn.is-primary')
+    ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  assert.equal(window.document.querySelector('#ipe-preferences-app'), null)
+  assert.ok(window.document.body.textContent?.includes('Preferences Saved'))
 
   await cleanup()
   await new Promise((resolve) => setTimeout(resolve, 50))

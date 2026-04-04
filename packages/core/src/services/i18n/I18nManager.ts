@@ -1,5 +1,6 @@
 import { createInterpolate } from './interpolate.js'
 import type { Interpolator } from './interpolate.js'
+import { paramCase } from '@/utils/string'
 
 function joinTemplateStrings(strings: TemplateStringsArray, values: Array<unknown>) {
   let out = strings[0] ?? ''

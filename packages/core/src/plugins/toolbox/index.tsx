@@ -34,6 +34,49 @@ interface ToolboxButton {
   index?: number // 任意数值均可：负数靠前、正数靠后、Infinity 末尾、未传时按插入顺序
 }
 
+type PluginRuntimeLogger = {
+  debug(scope: string, message: string, details?: unknown): void
+  info(scope: string, message: string, details?: unknown): void
+  warn(scope: string, message: string, details?: unknown): void
+  error(scope: string, message: string, details?: unknown): void
+}
+
+function getRuntimeLogger() {
+  return (globalThis as typeof globalThis & {
+    __END_WIKIPLUS_PLUGIN_LOGGER__?: PluginRuntimeLogger
+  }).__END_WIKIPLUS_PLUGIN_LOGGER__ || null
+}
+
+function serializeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    }
+  }
+  return error
+}
+
+function logToolboxRuntime(
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: string,
+  details?: unknown
+) {
+  const logger = getRuntimeLogger()
+  if (logger) {
+    logger[level]('toolbox', message, details)
+    return
+  }
+
+  const line = `[ipe-toolbox] ${message}`
+  if (details !== undefined) {
+    console[level](line, details)
+  } else {
+    console[level](line)
+  }
+}
+
 @RegisterPreferences(
   Schema.object({
     toolboxAlwaysShow: Schema.boolean()
@@ -57,20 +100,45 @@ export class PluginToolbox extends Service {
   }
 
   protected async start(): Promise<void> {
-    this.container = this.createToolbox()
-    this.ctx.preferences.get('toolboxAlwaysShow').then((val) => {
-      if (val) {
-        this.container.classList.add('is-persistent')
-      }
-    })
-    this.setupHoverLogic()
-    document.body.appendChild(this.container)
+    logToolboxRuntime('debug', '开始启动 toolbox 服务')
+    try {
+      this.container = this.createToolbox()
+      logToolboxRuntime('debug', 'toolbox 容器已创建', {
+        tagName: this.container.tagName,
+        childCount: this.container.childElementCount,
+      })
 
-    // 国际化变化时重新渲染
-    this.ctx.on('i18n/changed', () => {
-      console.info('i18n/changed', this.buttons)
-      this.renderAll()
-    })
+      this.ctx.preferences
+        .get('toolboxAlwaysShow')
+        .then((val) => {
+          if (val) {
+            this.container.classList.add('is-persistent')
+          }
+        })
+        .catch((error) => {
+          logToolboxRuntime('warn', '读取 toolboxAlwaysShow 失败', serializeError(error))
+        })
+
+      this.setupHoverLogic()
+      if (!document.body) {
+        throw new Error('document.body is not available for toolbox mount')
+      }
+      document.body.appendChild(this.container)
+      logToolboxRuntime('info', 'toolbox 容器已挂载', {
+        mounted: Boolean(document.querySelector('#ipe-edit-toolbox')),
+      })
+
+      this.ctx.on('i18n/changed', () => {
+        this.renderAll()
+      })
+    } catch (error) {
+      logToolboxRuntime('error', 'toolbox 服务启动失败', {
+        error: serializeError(error),
+        hasBody: Boolean(document.body),
+        readyState: document.readyState,
+      })
+      throw error
+    }
   }
 
   protected stop(): void | Promise<void> {
@@ -144,33 +212,36 @@ export class PluginToolbox extends Service {
   }
 
   private createToolbox() {
-    const toggler = (
-      <button
-        className="ipe-toolbox-btn"
-        id="toolbox-toggler"
-        onClick={() => {
-          this.toggle()
-        }}
-      >
-        {/* Font Awesome 5 Solid: Plus */}
-        <svg xmlns="http://www.w3.org/2000/svg" width="448" height="512" viewBox="0 0 448 512">
-          <rect width="448" height="512" fill="none" />
-          <path
-            fill="currentColor"
-            d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32"
-          />
-        </svg>
-      </button>
-    )
-    const element = (
-      <div id="ipe-edit-toolbox">
-        <ul className="btn-group group1" style={{ display: 'flex', flexDirection: 'column' }}></ul>
-        <ul className="btn-group group2" style={{ display: 'flex', flexDirection: 'row' }}></ul>
-        {toggler}
-      </div>
-    )
+    const element = document.createElement('div')
+    element.id = 'ipe-edit-toolbox'
 
-    return element as HTMLElement
+    const group1 = document.createElement('ul')
+    group1.className = 'btn-group group1'
+    group1.style.display = 'flex'
+    group1.style.flexDirection = 'column'
+
+    const group2 = document.createElement('ul')
+    group2.className = 'btn-group group2'
+    group2.style.display = 'flex'
+    group2.style.flexDirection = 'row'
+
+    const toggler = document.createElement('button')
+    toggler.className = 'ipe-toolbox-btn'
+    toggler.id = 'toolbox-toggler'
+    toggler.type = 'button'
+    toggler.setAttribute('aria-label', 'Toggle toolbox')
+    toggler.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="448" height="512" viewBox="0 0 448 512" aria-hidden="true" focusable="false">
+        <rect width="448" height="512" fill="none"></rect>
+        <path fill="currentColor" d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32"></path>
+      </svg>
+    `
+    toggler.addEventListener('click', () => {
+      this.toggle()
+    })
+
+    element.append(group1, group2, toggler)
+    return element
   }
 
   private normalizeButtonId(id: string) {
