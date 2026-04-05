@@ -1,7 +1,7 @@
 {
   "name": "@inpageedit/end-wikiplus",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "build": "vite build",
