@@ -170,11 +170,20 @@
     tab-size: 2;
   }
 
-  .ipe-codeEditor__highlight {
+  .ipe-codeEditor__highlightViewport {
     position: absolute;
     inset: 0;
-    overflow: hidden;
+    overflow: auto;
     pointer-events: none;
+    scrollbar-width: none;
+  }
+
+  .ipe-codeEditor__highlightViewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ipe-codeEditor__highlight {
+    min-height: 100%;
     color: var(--color-text-dark);
   }
 
@@ -190,7 +199,7 @@
   }
 
   .ipe-codeEditor__textarea[name='text'],
-  .ipe-codeEditor__highlight {
+  .ipe-codeEditor__highlightViewport {
     height: var(--textarea-height);
   }
 

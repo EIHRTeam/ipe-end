@@ -189,6 +189,7 @@ function getLanguageLabel(language: CodeLanguage) {
 
 export function SyntaxHighlightedTextarea(props: SyntaxHighlightedTextareaProps) {
   let textareaRef: HTMLTextAreaElement | null = null
+  let highlightViewportRef: HTMLDivElement | null = null
   let highlightRef: HTMLPreElement | null = null
   let badgeRef: HTMLSpanElement | null = null
   let editorRef: HTMLDivElement | null = null
@@ -200,11 +201,12 @@ export function SyntaxHighlightedTextarea(props: SyntaxHighlightedTextareaProps)
   })
 
   const syncScrollPosition = () => {
-    if (!textareaRef || !highlightRef) {
+    if (!textareaRef || !highlightViewportRef) {
       return
     }
 
-    highlightRef.style.transform = `translate(${-textareaRef.scrollLeft}px, ${-textareaRef.scrollTop}px)`
+    highlightViewportRef.scrollTop = textareaRef.scrollTop
+    highlightViewportRef.scrollLeft = textareaRef.scrollLeft
   }
 
   const updateLanguageBadge = () => {
@@ -248,15 +250,23 @@ export function SyntaxHighlightedTextarea(props: SyntaxHighlightedTextareaProps)
       data-ipe-language={currentLanguage}
     >
       <div className="ipe-codeEditor__surface">
-        <pre
+        <div
           ref={(el) => {
-            highlightRef = el as HTMLPreElement
-            scheduleHighlightUpdate()
+            highlightViewportRef = el as HTMLDivElement
+            syncScrollPosition()
           }}
-          className={`ipe-codeEditor__highlight ${props.textareaClassName || ''}`}
-          style={props.textareaStyle}
+          className="ipe-codeEditor__highlightViewport"
           aria-hidden="true"
-        ></pre>
+        >
+          <pre
+            ref={(el) => {
+              highlightRef = el as HTMLPreElement
+              scheduleHighlightUpdate()
+            }}
+            className={`ipe-codeEditor__highlight ${props.textareaClassName || ''}`}
+            style={props.textareaStyle}
+          ></pre>
+        </div>
         <textarea
           ref={(el) => {
             textareaRef = el as HTMLTextAreaElement
