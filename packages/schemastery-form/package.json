@@ -21,6 +21,7 @@
     },
     "./vue": {
       "types": "./dist/vue.d.ts",
+      "source": "./src/vue/index.ts",
       "import": "./dist/vue.js"
     }
   },

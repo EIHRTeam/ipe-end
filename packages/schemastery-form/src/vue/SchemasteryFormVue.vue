@@ -10,7 +10,7 @@ import {
   SchemaForm,
   type SchemaFormChangeEvent,
   type SchemaFormChangeDetail,
-} from '@/index'
+} from '../index'
 
 // Props 定义
 interface Props {

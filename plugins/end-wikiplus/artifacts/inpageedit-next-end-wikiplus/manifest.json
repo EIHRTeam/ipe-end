@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "id": "inpageedit-next-end-wikiplus",
+  "id": "org.eihrteam.ipe",
   "name": "InPageEdit NEXT for Endfield Wiki⁺",
   "version": "0.1.0",
   "description": "Endfield Wiki⁺ host-first InPageEdit plugin package.",

@@ -39,6 +39,14 @@ export default defineConfig({
         replacement: resolve(ROOT, '../../packages/logger/src/index.ts'),
       },
       {
+        find: /^schemastery-form\/vue$/,
+        replacement: resolve(ROOT, '../../packages/schemastery-form/src/vue/index.ts'),
+      },
+      {
+        find: /^schemastery-form$/,
+        replacement: resolve(ROOT, '../../packages/schemastery-form/src/index.ts'),
+      },
+      {
         find: /^@\/InPageEdit(?:\.js)?$/,
         replacement: resolve(ROOT, './src/shims/InPageEdit.ts'),
       },
