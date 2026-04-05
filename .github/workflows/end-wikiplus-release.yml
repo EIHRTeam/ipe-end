@@ -53,6 +53,7 @@ jobs:
           MANIFEST_VERSION="$(jq -r '.version' manifest.json)"
           PLUGIN_ID="$(jq -r '.id' manifest.json)"
           PLUGIN_NAME="$(jq -r '.name' manifest.json)"
+          ARTIFACT_DIR="$(basename "$PWD")"
 
           if [[ "$PKG_VERSION" != "$MANIFEST_VERSION" ]]; then
             echo "Version mismatch: package.json=$PKG_VERSION manifest.json=$MANIFEST_VERSION"
@@ -66,6 +67,7 @@ jobs:
           echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
           echo "plugin_id=$PLUGIN_ID" >> "$GITHUB_OUTPUT"
           echo "plugin_name=$PLUGIN_NAME" >> "$GITHUB_OUTPUT"
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
           echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
 
@@ -75,7 +77,19 @@ jobs:
         shell: bash
         run: |
           ASSET_PATH="$RUNNER_TEMP/${{ steps.plugin-meta.outputs.asset_name }}"
-          zip -r "$ASSET_PATH" "${{ steps.plugin-meta.outputs.plugin_id }}" -x "*.map" -x "__MACOSX/*"
+          STAGING_ROOT="$RUNNER_TEMP/${{ steps.plugin-meta.outputs.plugin_id }}"
+
+          rm -rf "$STAGING_ROOT"
+          mkdir -p "$STAGING_ROOT"
+
+          cp "${{ steps.plugin-meta.outputs.artifact_dir }}/manifest.json" "$STAGING_ROOT/manifest.json"
+          cp -R "${{ steps.plugin-meta.outputs.artifact_dir }}/dist" "$STAGING_ROOT/dist"
+
+          (
+            cd "$RUNNER_TEMP"
+            zip -r "$ASSET_PATH" "${{ steps.plugin-meta.outputs.plugin_id }}" -x "*.map" -x "__MACOSX/*"
+          )
+
           echo "asset_path=$ASSET_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
