@@ -171,6 +171,9 @@ importers:
       '@inpageedit/modal':
         specifier: workspace:^
         version: link:../modal
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       idb-plus:
         specifier: ^0.2.0
         version: 0.2.0

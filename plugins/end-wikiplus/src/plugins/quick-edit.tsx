@@ -2,7 +2,14 @@ import { Inject, InPageEdit, Schema } from '@/InPageEdit'
 import { RegisterPreferences } from '@/decorators/Preferences'
 import BasePlugin from '@/plugins/BasePlugin'
 import { WatchlistAction } from '@/models/WikiPage/types/WatchlistAction'
-import { CheckBox, InputBox, MBox, ProgressBar, RadioBox } from '@/components'
+import {
+  CheckBox,
+  InputBox,
+  MBox,
+  ProgressBar,
+  RadioBox,
+  SyntaxHighlightedTextarea,
+} from '@/components'
 import { makeCallable } from '@/utils/makeCallable.js'
 import { noop } from '@/utils/noop'
 import { sleep } from '@/utils/sleep'
@@ -13,14 +20,20 @@ import { parseJsonObject, prettyJson } from '@plugin/utils/result'
 declare module '@/InPageEdit' {
   interface InPageEdit {
     quickEdit: EndWikiQuickEditPlugin & {
-      (...args: Parameters<EndWikiQuickEditPlugin['showModal']>): ReturnType<EndWikiQuickEditPlugin['showModal']>
+      (
+        ...args: Parameters<EndWikiQuickEditPlugin['showModal']>
+      ): ReturnType<EndWikiQuickEditPlugin['showModal']>
     }
   }
   interface Events {
-    'quick-edit/init-options'(payload: Omit<EndWikiQuickEditEventPayload, 'modal' | 'wikiPage'>): void
+    'quick-edit/init-options'(
+      payload: Omit<EndWikiQuickEditEventPayload, 'modal' | 'wikiPage'>
+    ): void
     'quick-edit/show-modal'(payload: Omit<EndWikiQuickEditEventPayload, 'wikiPage'>): void
     'quick-edit/wiki-page'(payload: EndWikiQuickEditEventPayload): void
-    'quick-edit/edit-notice'(payload: EndWikiQuickEditEventPayload & { editNotices: ReactNode[] }): void
+    'quick-edit/edit-notice'(
+      payload: EndWikiQuickEditEventPayload & { editNotices: ReactNode[] }
+    ): void
     'quick-edit/submit'(payload: EndWikiQuickEditSubmitPayload & { ctx: InPageEdit }): void
   }
   interface PreferencesMap {
@@ -120,7 +133,7 @@ export interface EndWikiQuickEditSubmitPayload {
       .default('preferences'),
   })
     .description('Quick edit options')
-    .extra('category', 'editor'),
+    .extra('category', 'editor')
 )
 export class EndWikiQuickEditPlugin extends BasePlugin {
   private readonly DEFAULT_OPTIONS: EndWikiQuickEditOptions = {
@@ -188,7 +201,9 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           ? payload.reloadAfterSave
           : this.DEFAULT_OPTIONS.reloadAfterSave,
       createOnly:
-        typeof payload.createOnly === 'boolean' ? payload.createOnly : this.DEFAULT_OPTIONS.createOnly,
+        typeof payload.createOnly === 'boolean'
+          ? payload.createOnly
+          : this.DEFAULT_OPTIONS.createOnly,
     }
 
     if (!options.editSummary) {
@@ -208,7 +223,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         <>
           Loading: <u>{options.title}</u>
         </>
-      ) as HTMLElement,
+      ) as HTMLElement
     )
     modal.setContent(
       (
@@ -224,7 +239,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         >
           <ProgressBar />
         </section>
-      ) as HTMLElement,
+      ) as HTMLElement
     )
     modal.addButton({
       side: 'right',
@@ -263,7 +278,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         <>
           {$`Quick ${isCreatingNewPage ? 'Create' : 'Edit'}`} <u>{wikiPage.pageInfo.title}</u>
         </>
-      ) as HTMLElement,
+      ) as HTMLElement
     )
 
     const editNotices = [] as ReactNode[]
@@ -273,13 +288,13 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           <p>
             {$`The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.`}
           </p>
-        </MBox>,
+        </MBox>
       )
     } else if (isCreatingNewPage) {
       editNotices.push(
         <MBox title={$`Attention`} type="important">
           <p>{$`This page does not exist.`}</p>
-        </MBox>,
+        </MBox>
       )
     }
 
@@ -298,15 +313,15 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           className="ipe-quickEdit__content"
           style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
-          <textarea
-            className={`ipe-quickEdit__textarea ${fontOptions.className}`}
-            style={{ fontFamily: fontOptions.fontFamily }}
+          <SyntaxHighlightedTextarea
+            textareaClassName={`ipe-quickEdit__textarea ${fontOptions.className}`}
+            textareaStyle={{ fontFamily: fontOptions.fontFamily }}
             name="text"
             id="wpTextbox1"
             spellcheck={false}
-          >
-            {editingContent}
-          </textarea>
+            title={wikiPage.pageInfo.title}
+            value={editingContent}
+          />
         </div>
         <div
           className="ipe-quickEdit__options"
@@ -400,7 +415,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           }
         },
       },
-      0,
+      0
     )
     modal.setOptions({
       beforeClose: () => {
@@ -433,7 +448,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
               modal.close()
             }
             return true
-          },
+          }
         )
         return false
       },
@@ -492,16 +507,13 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
   }
 
   private async getWikiPageFromPayload(
-    payload: Partial<EndWikiQuickEditOptions>,
+    payload: Partial<EndWikiQuickEditOptions>
   ): Promise<EndWikiQuickEditWikiPage> {
     const itemId = payload.itemId ?? this.ctx.bridge.getCurrentItemId()
     const lang = payload.lang || this.ctx.bridge.getCurrentLanguage()
     const currentItem = this.ctx.bridge.getCurrentItem()
     const title =
-      payload.title ||
-      this.ctx.bridge.getCurrentItemName() ||
-      itemId ||
-      this.ctx.$`Current item`
+      payload.title || this.ctx.bridge.getCurrentItemName() || itemId || this.ctx.$`Current item`
 
     let sourceObject = currentItem ?? { itemId: itemId || '' }
 
@@ -563,7 +575,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           <path d="M16 5l3 3" />
         </svg>
       ) as HTMLElement,
-          tooltip: () => $`Quick Edit`,
+      tooltip: () => $`Quick Edit`,
       onClick: () => {
         void this.showModal({
           title:

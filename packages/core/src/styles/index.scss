@@ -137,6 +137,127 @@
     font-family: serif;
   }
 
+  .ipe-codeEditor {
+    width: 100%;
+  }
+
+  .ipe-codeEditor__surface {
+    position: relative;
+    overflow: hidden;
+    border: var(--border-width) solid var(--color-border-input);
+    border-radius: var(--border-radius-input);
+    background: var(--textarea-background);
+    transition:
+      border var(--transition-slow),
+      box-shadow var(--transition-slow);
+  }
+
+  .ipe-codeEditor__surface:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 var(--border-width) var(--color-primary);
+  }
+
+  .ipe-codeEditor__highlight,
+  .ipe-codeEditor__textarea {
+    margin: 0;
+    width: 100%;
+    min-height: var(--textarea-min-height);
+    box-sizing: border-box;
+    line-height: var(--line-height-input);
+    padding: var(--padding-input-y) var(--padding-input-x);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    tab-size: 2;
+  }
+
+  .ipe-codeEditor__highlight {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--color-text-dark);
+  }
+
+  .ipe-codeEditor__textarea {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: transparent;
+    caret-color: var(--color-text-dark);
+    resize: vertical;
+  }
+
+  .ipe-codeEditor__textarea[name='text'],
+  .ipe-codeEditor__highlight {
+    height: var(--textarea-height);
+  }
+
+  .ipe-codeEditor__textarea:focus {
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .ipe-codeEditor__textarea::selection {
+    background: rgba(var(--color-primary--rgb), 0.22);
+  }
+
+  .ipe-codeEditor__language {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.75rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(var(--color-primary--rgb), 0.12);
+    color: var(--color-primary-active);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+  }
+
+  .ipe-codeEditor__highlight .hljs-attr,
+  .ipe-codeEditor__highlight .hljs-property,
+  .ipe-codeEditor__highlight .hljs-title.class_,
+  .ipe-codeEditor__highlight .hljs-title.function_ {
+    color: #0550ae;
+  }
+
+  .ipe-codeEditor__highlight .hljs-keyword,
+  .ipe-codeEditor__highlight .hljs-selector-tag,
+  .ipe-codeEditor__highlight .hljs-built_in,
+  .ipe-codeEditor__highlight .hljs-name {
+    color: #7c3aed;
+  }
+
+  .ipe-codeEditor__highlight .hljs-string,
+  .ipe-codeEditor__highlight .hljs-meta .hljs-string,
+  .ipe-codeEditor__highlight .hljs-template-variable {
+    color: #0f766e;
+  }
+
+  .ipe-codeEditor__highlight .hljs-number,
+  .ipe-codeEditor__highlight .hljs-literal,
+  .ipe-codeEditor__highlight .hljs-symbol {
+    color: #b45309;
+  }
+
+  .ipe-codeEditor__highlight .hljs-comment,
+  .ipe-codeEditor__highlight .hljs-quote {
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .ipe-codeEditor__highlight .hljs-tag,
+  .ipe-codeEditor__highlight .hljs-punctuation,
+  .ipe-codeEditor__highlight .hljs-operator {
+    color: #475569;
+  }
+
   .ipe-input-box {
     label {
       display: block;

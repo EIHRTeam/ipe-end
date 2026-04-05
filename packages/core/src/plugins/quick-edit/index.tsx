@@ -2,6 +2,7 @@ import { Inject, InPageEdit, Schema } from '@/InPageEdit'
 import { RegisterPreferences } from '@/decorators/Preferences'
 import { IWikiPage } from '@/models/WikiPage'
 import { WatchlistAction } from '@/models/WikiPage/types/WatchlistAction'
+import { SyntaxHighlightedTextarea } from '@/components'
 import { IPEModal } from '@inpageedit/modal'
 import { ReactNode } from 'jsx-dom'
 import { makeCallable } from '@/utils/makeCallable.js'
@@ -311,14 +312,15 @@ export class PluginQuickEdit extends BasePlugin {
               />
             </>
           )}
-          <textarea
-            className={`ipe-quickEdit__textarea ${fontOptions.className}`}
-            style={{ fontFamily: fontOptions.fontFamily }}
+          <SyntaxHighlightedTextarea
+            textareaClassName={`ipe-quickEdit__textarea ${fontOptions.className}`}
+            textareaStyle={{ fontFamily: fontOptions.fontFamily }}
             name="text"
             id="wpTextbox1"
-          >
-            {edittingContent}
-          </textarea>
+            title={wikiPage.pageInfo.title}
+            contentModel={wikiPage.revisions?.[0]?.contentmodel || wikiPage.contentmodel}
+            value={edittingContent}
+          />
         </div>
         <div
           class="ipe-quickEdit__options"

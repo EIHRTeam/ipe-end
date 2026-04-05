@@ -23,6 +23,7 @@ declare global {
   const ProgressBar: typeof import('./components/ProgressBar/index').ProgressBar
   const RadioBox: typeof import('./components/RadioBox').RadioBox
   const RegisterPreferences: typeof import('./decorators/Preferences').RegisterPreferences
+  const SyntaxHighlightedTextarea: typeof import('./components/SyntaxHighlightedTextarea').SyntaxHighlightedTextarea
   const TabContent: typeof import('./components/TabView/index').TabContent
   const TabLabel: typeof import('./components/TabView/index').TabLabel
   const TabView: typeof import('./components/TabView/index').TabView
@@ -34,6 +35,7 @@ declare global {
   const createVueAppWithIPE: typeof import('./utils/vueHooks').createVueAppWithIPE
   const deepToRaw: typeof import('./utils/vueReactivity').deepToRaw
   const defineAsyncPlugin: typeof import('./utils/defineAsyncPlugin').defineAsyncPlugin
+  const detectCodeLanguage: typeof import('./components/SyntaxHighlightedTextarea').detectCodeLanguage
   const ensureSlash: typeof import('./utils/string').ensureSlash
   const hmacSHA1: typeof import('./utils/hash').hmacSHA1
   const injectIPE: typeof import('./utils/vueHooks').injectIPE
@@ -73,6 +75,9 @@ declare global {
   // @ts-ignore
   export type { RadioBoxProps } from './components/RadioBox'
   import('./components/RadioBox')
+  // @ts-ignore
+  export type { CodeLanguage, DetectCodeLanguageOptions, SyntaxHighlightedTextareaProps } from './components/SyntaxHighlightedTextarea'
+  import('./components/SyntaxHighlightedTextarea')
   // @ts-ignore
   export type { TabViewLabelOptions } from './components/TabView/index'
   import('./components/TabView/index')
