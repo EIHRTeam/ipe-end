@@ -113,4 +113,28 @@ describe('buildLineRenderModels', () => {
       { text: 'd', className: null },
     ])
   })
+
+  it('keeps class continuity when a single run spans multiple lines', () => {
+    const text = 'foo\nbar'
+    const runs = flattenHighlightedHtml(document, '<span class="hljs-string">foo\nbar</span>')
+    const runRanges = createHighlightRunRanges(runs)
+    const segmentMaps = createSegmentMaps(['foo\n', 'bar'], 'en')
+    const lines = [
+      {
+        text: 'foo\n',
+        start: { segmentIndex: 0, graphemeIndex: 0 },
+        end: { segmentIndex: 1, graphemeIndex: 0 },
+      },
+      {
+        text: 'bar',
+        start: { segmentIndex: 1, graphemeIndex: 0 },
+        end: { segmentIndex: 2, graphemeIndex: 0 },
+      },
+    ]
+
+    const models = buildLineRenderModels(text, lines, runRanges, segmentMaps)
+
+    expect(models[0]?.parts).toEqual([{ text: 'foo\n', className: 'hljs-string' }])
+    expect(models[1]?.parts).toEqual([{ text: 'bar', className: 'hljs-string' }])
+  })
 })

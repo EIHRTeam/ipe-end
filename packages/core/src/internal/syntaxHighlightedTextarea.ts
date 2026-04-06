@@ -99,7 +99,10 @@ export function buildLineRenderModels(
   runRanges: HighlightRunRange[],
   segmentMaps: SegmentMap[]
 ): LineRenderModel[] {
-  return lines.map((line) => {
+  const models: LineRenderModel[] = []
+  let runStartIndex = 0
+
+  for (const line of lines) {
     const start = cursorToTextOffset(line.start, segmentMaps)
     const rawEnd = cursorToTextOffset(line.end, segmentMaps)
     const rawText = fullText.slice(start, rawEnd)
@@ -111,18 +114,26 @@ export function buildLineRenderModels(
       throw new Error('pretext line text mismatch')
     }
 
-    const parts = sliceHighlightRuns(runRanges, start, end)
+    const { parts, nextRunStartIndex } = sliceHighlightRuns(
+      runRanges,
+      start,
+      end,
+      runStartIndex
+    )
+    runStartIndex = nextRunStartIndex
     const reconstructedText = parts.map((part) => part.text).join('')
     if (reconstructedText !== line.text) {
       throw new Error('highlight run slicing mismatch')
     }
 
-    return {
+    models.push({
       key: `${start}:${end}`,
       text: line.text,
       parts,
-    }
-  })
+    })
+  }
+
+  return models
 }
 
 function walkHighlightNodes(nodes: Iterable<Node>, classNames: string[], runs: HighlightRun[]) {
@@ -164,33 +175,58 @@ function normalizeClassNames(classNames: string[]) {
 function sliceHighlightRuns(
   runRanges: HighlightRunRange[],
   start: number,
-  end: number
-): LineRenderPart[] {
-  if (start === end) {
-    return []
+  end: number,
+  startRunIndex = 0
+): {
+  parts: LineRenderPart[]
+  nextRunStartIndex: number
+} {
+  let runIndex = Math.max(0, startRunIndex)
+  while (runIndex < runRanges.length && runRanges[runIndex].end <= start) {
+    runIndex += 1
   }
 
   const parts: LineRenderPart[] = []
-  for (const run of runRanges) {
-    if (run.end <= start) {
-      continue
-    }
+  let nextRunStartIndex = runIndex
+
+  for (let index = runIndex; index < runRanges.length; index += 1) {
+    const run = runRanges[index]
     if (run.start >= end) {
-      break
+      nextRunStartIndex = index
+      return {
+        parts,
+        nextRunStartIndex,
+      }
     }
 
     const rangeStart = Math.max(run.start, start)
     const rangeEnd = Math.min(run.end, end)
-    const offsetStart = rangeStart - run.start
-    const offsetEnd = rangeEnd - run.start
+    if (rangeStart < rangeEnd) {
+      const offsetStart = rangeStart - run.start
+      const offsetEnd = rangeEnd - run.start
 
-    parts.push({
-      text: run.text.slice(offsetStart, offsetEnd),
-      className: run.className,
-    })
+      parts.push({
+        text: run.text.slice(offsetStart, offsetEnd),
+        className: run.className,
+      })
+    }
+
+    // Keep the current run as the next start if it can continue to the next line.
+    if (run.end > end) {
+      nextRunStartIndex = index
+      return {
+        parts,
+        nextRunStartIndex,
+      }
+    }
+
+    nextRunStartIndex = index + 1
   }
 
-  return parts
+  return {
+    parts,
+    nextRunStartIndex,
+  }
 }
 
 function segmentIntoGraphemes(text: string, locale?: string) {

@@ -8,13 +8,16 @@ import {
   MBox,
   ProgressBar,
   RadioBox,
-  SyntaxHighlightedTextarea,
 } from '@/components'
 import { makeCallable } from '@/utils/makeCallable.js'
 import { noop } from '@/utils/noop'
 import { sleep } from '@/utils/sleep'
 import { IPEModal } from '@inpageedit/modal'
 import type { ReactNode } from 'jsx-dom'
+import {
+  MonacoTextareaBridge,
+  type MonacoTextareaBridgeHandle,
+} from '@plugin/components/MonacoTextareaBridge'
 import { parseJsonObject, prettyJson } from '@plugin/utils/result'
 
 declare module '@/InPageEdit' {
@@ -86,6 +89,9 @@ export interface EndWikiQuickEditEventPayload {
   options: EndWikiQuickEditOptions
   modal: IPEModal
   wikiPage: EndWikiQuickEditWikiPage
+  getEditorValue?: () => string
+  setEditorValue?: (value: string) => void
+  syncEditorValue?: () => void
 }
 
 export interface EndWikiQuickEditSubmitPayload {
@@ -306,6 +312,30 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       editNotices,
     })
 
+    let editorBridge: MonacoTextareaBridgeHandle | null = null
+    let fallbackNotified = false
+    const syncEditorValue = () => {
+      editorBridge?.syncTextarea()
+    }
+    const getFallbackTextarea = () =>
+      editForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]')
+    const getEditorValue = () => {
+      syncEditorValue()
+      if (editorBridge) {
+        return editorBridge.getValue()
+      }
+      return getFallbackTextarea()?.value || ''
+    }
+    const setEditorValue = (value: string) => {
+      if (editorBridge) {
+        editorBridge.setValue(value)
+      }
+      const textarea = getFallbackTextarea()
+      if (textarea) {
+        textarea.value = value
+      }
+    }
+
     const editForm = (
       <form className="ipe-quickEdit__form">
         <div className="ipe-quickEdit__notices">{editNotices}</div>
@@ -313,14 +343,27 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           className="ipe-quickEdit__content"
           style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
-          <SyntaxHighlightedTextarea
+          <MonacoTextareaBridge
             textareaClassName={`ipe-quickEdit__textarea ${fontOptions.className}`}
             textareaStyle={{ fontFamily: fontOptions.fontFamily }}
             name="text"
             id="wpTextbox1"
             spellcheck={false}
-            title={wikiPage.pageInfo.title}
+            language="json"
             value={editingContent}
+            onReady={(bridge) => {
+              editorBridge = bridge
+            }}
+            onError={(error) => {
+              this.logger.warn('Monaco editor initialization failed, fallback to textarea.', error)
+              if (!fallbackNotified) {
+                fallbackNotified = true
+                this.ctx.modal.notify('warning', {
+                  title: $`Editor Fallback`,
+                  content: $`Advanced editor is unavailable in this environment. Switched to compatible textarea mode.`,
+                })
+              }
+            }}
           />
         </div>
         <div
@@ -378,6 +421,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         label: $`Submit`,
         keyPress: (await this.ctx.preferences.get('quickEdit.keyshortcut.save')) || undefined,
         method: async () => {
+          syncEditorValue()
           const formData = new FormData(editForm)
           modal.setLoadingState(true)
 
@@ -419,13 +463,19 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     )
     modal.setOptions({
       beforeClose: () => {
+        syncEditorValue()
         const oldStr = wikiPage.revisions[0]?.content || ''
-        const newStr = editForm.querySelector('textarea')?.value || ''
+        const newStr = getEditorValue()
         if (newStr === oldStr) {
           return true
         }
 
-        this.ctx.modal.confirm(
+        const showConfirm = this.ctx.modal?.confirm
+        if (typeof showConfirm !== 'function') {
+          return true
+        }
+
+        showConfirm(
           {
             className: 'is-primary',
             title: $`Unsaved Changes`,
@@ -459,10 +509,13 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       options,
       modal,
       wikiPage,
+      getEditorValue,
+      setEditorValue,
+      syncEditorValue,
     })
 
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (editForm.querySelector('textarea')?.value === editingContent) {
+      if (getEditorValue() === editingContent) {
         return true
       }
       event.preventDefault()
@@ -471,6 +524,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     window.addEventListener('beforeunload', beforeUnload)
     modal.on(modal.Event.Close, () => {
       window.removeEventListener('beforeunload', beforeUnload)
+      editorBridge?.dispose()
+      editorBridge = null
     })
 
     return modal

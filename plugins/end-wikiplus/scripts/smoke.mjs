@@ -21,6 +21,7 @@ globalThis.HTMLElement = window.HTMLElement
 globalThis.Element = window.Element
 globalThis.Node = window.Node
 globalThis.Event = window.Event
+globalThis.UIEvent = window.UIEvent
 globalThis.CustomEvent = window.CustomEvent
 globalThis.MutationObserver = window.MutationObserver
 globalThis.getComputedStyle = window.getComputedStyle.bind(window)
@@ -48,6 +49,8 @@ window.matchMedia =
   (() => ({
     matches: false,
     media: '',
+    addEventListener() {},
+    removeEventListener() {},
     addListener() {},
     removeListener() {},
     onchange: null,
@@ -57,6 +60,14 @@ window.matchMedia =
   }))
 
 globalThis.matchMedia = window.matchMedia
+Object.defineProperty(globalThis, 'Worker', {
+  value: undefined,
+  configurable: true,
+})
+Object.defineProperty(window, 'Worker', {
+  value: undefined,
+  configurable: true,
+})
 globalThis.ResizeObserver = class {
   observe() {}
   unobserve() {}
@@ -159,6 +170,17 @@ const logger = { info() {}, warn() {}, error() {}, debug() {} }
 window.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
 globalThis.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
 
+function findModalButton(windowEl, labels) {
+  const expected = Array.isArray(labels) ? labels : [labels]
+  const candidates = [...windowEl.querySelectorAll('.ipe-modal-btn')]
+  return (
+    candidates.find((node) => {
+      const text = (node.textContent || '').trim().toLowerCase()
+      return expected.some((label) => text.includes(String(label).toLowerCase()))
+    }) || null
+  )
+}
+
 async function main() {
   const artifactUrl = new URL(
     `../artifacts/inpageedit-next-end-wikiplus/dist/index.js?ts=${Date.now()}`,
@@ -187,10 +209,42 @@ async function main() {
 
   assert.ok(window.document.querySelector('.ipe-modal-modal.is-centered'))
   assert.ok(window.document.querySelector('.ipe-quickEdit__form'))
+  const editorBridge = window.document.querySelector('.endwiki-monacoEditor')
+  assert.ok(editorBridge)
+  assert.ok(
+    ['loading', 'monaco', 'textarea'].includes(editorBridge?.getAttribute('data-editor-mode') || '')
+  )
   assert.ok(window.document.querySelector('textarea#wpTextbox1'))
   assert.ok(window.document.querySelector('input[name="summary"]'))
   assert.ok(window.document.body.textContent?.includes('Follow MW preferences'))
   assert.ok(!window.document.body.textContent?.includes('watchlist.preferences'))
+
+  const quickEditWindow =
+    window.document.querySelector('.ipe-modal-modal__window.ipe-quickEdit') ||
+    window.document.querySelector('.ipe-modal-modal__window')
+  assert.ok(quickEditWindow)
+
+  const textarea = window.document.querySelector('textarea#wpTextbox1')
+  assert.ok(textarea)
+  textarea.value = '{"itemId":"1","name":"Changed by smoke"}'
+  textarea.dispatchEvent(new window.Event('input', { bubbles: true }))
+
+  const previewBtn = findModalButton(quickEditWindow, ['preview', '预览'])
+  assert.ok(previewBtn)
+  const modalCountBeforePreview = window.document.querySelectorAll('.ipe-modal-modal').length
+  previewBtn.click()
+  await new Promise((resolve) => setTimeout(resolve, 120))
+  assert.ok(window.document.querySelectorAll('.ipe-modal-modal').length > modalCountBeforePreview)
+  assert.ok(window.document.body.textContent?.includes('Changed by smoke'))
+
+  const diffBtn = findModalButton(quickEditWindow, ['diff', '差异'])
+  assert.ok(diffBtn)
+  const modalCountBeforeDiff = window.document.querySelectorAll('.ipe-modal-modal').length
+  diffBtn.click()
+  await new Promise((resolve) => setTimeout(resolve, 120))
+  assert.ok(window.document.querySelectorAll('.ipe-modal-modal').length > modalCountBeforeDiff)
+  assert.ok(window.document.querySelector('.endwiki-ipe-json-diff'))
+  assert.ok(window.document.body.textContent?.includes('Changed by smoke'))
 
   window.document.querySelector('#ipe-toolbox__preferences-btn')?.dispatchEvent(
     new window.MouseEvent('click', { bubbles: true }),

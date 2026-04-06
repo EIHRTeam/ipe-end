@@ -203,6 +203,11 @@
     unicode-bidi: plaintext;
   }
 
+  .ipe-codeEditor__spacer {
+    display: block;
+    pointer-events: none;
+  }
+
   .ipe-codeEditor__textarea {
     position: relative;
     z-index: 1;

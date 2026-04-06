@@ -68,6 +68,7 @@ export class EndWikiQuickDiffPlugin extends BasePlugin {
       modal.removeButton('*')
     }
 
+    modal.show()
     modal.setTitle($(wikiPage.pageInfo.title)`Quick Diff - {{ $1 }}`)
     modal.setContent(
       (
@@ -98,7 +99,12 @@ export class EndWikiQuickDiffPlugin extends BasePlugin {
     return modal
   }
 
-  private async injectQuickEdit({ modal, wikiPage }: EndWikiQuickEditEventPayload) {
+  private async injectQuickEdit({
+    modal,
+    wikiPage,
+    getEditorValue,
+    syncEditorValue,
+  }: EndWikiQuickEditEventPayload) {
     const { $ } = this.ctx
     let latestDiffModal: IPEModal | undefined
     modal.addButton(
@@ -108,10 +114,13 @@ export class EndWikiQuickDiffPlugin extends BasePlugin {
         keyPress: (await this.ctx.preferences.get('quickDiff.keyshortcut')) || undefined,
         className: 'btn btn-secondary',
         method: () => {
+          syncEditorValue?.()
           const originalText = wikiPage.revisions?.[0]?.content || ''
           const currentText =
+            getEditorValue?.() ||
             (modal.get$content().querySelector<HTMLTextAreaElement>('textarea[name="text"]')
-              ?.value as string) || ''
+              ?.value as string) ||
+            ''
 
           if (originalText === currentText) {
             return this.ctx.modal.notify('info', {

@@ -96,7 +96,12 @@ export class EndWikiQuickPreviewPlugin extends BasePlugin {
     return modal
   }
 
-  private async injectQuickEdit({ modal, wikiPage }: EndWikiQuickEditEventPayload) {
+  private async injectQuickEdit({
+    modal,
+    wikiPage,
+    getEditorValue,
+    syncEditorValue,
+  }: EndWikiQuickEditEventPayload) {
     const { $ } = this.ctx
     let latestPreviewModal: IPEModal | undefined
     modal.addButton(
@@ -106,9 +111,12 @@ export class EndWikiQuickPreviewPlugin extends BasePlugin {
         className: 'btn btn-secondary',
         keyPress: (await this.ctx.preferences.get('quickPreview.keyshortcut')) || undefined,
         method: () => {
+          syncEditorValue?.()
           const text =
+            getEditorValue?.() ||
             (modal.get$content().querySelector<HTMLTextAreaElement>('textarea[name="text"]')
-              ?.value as string) || ''
+              ?.value as string) ||
+            ''
 
           latestPreviewModal = this.showModal(
             text,

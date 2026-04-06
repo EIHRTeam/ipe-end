@@ -87,6 +87,13 @@ function flushAnimationFrames() {
   }
 }
 
+function createLongValue(lineCount = 200) {
+  return Array.from(
+    { length: lineCount },
+    (_, index) => `const line_${index.toString().padStart(3, '0')} = ${index};`
+  ).join('\n')
+}
+
 function mountEditor(value = 'const answer = "ready"\n') {
   const element = SyntaxHighlightedTextarea({
     name: 'text',
@@ -140,6 +147,7 @@ describe('SyntaxHighlightedTextarea renderer', () => {
     nextFrameId = 1
     document.body.innerHTML = ''
     vi.resetModules()
+    vi.useFakeTimers()
 
     vi.stubGlobal(
       'requestAnimationFrame',
@@ -162,6 +170,7 @@ describe('SyntaxHighlightedTextarea renderer', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.clearAllMocks()
     MockResizeObserver.reset()
@@ -199,6 +208,47 @@ describe('SyntaxHighlightedTextarea renderer', () => {
     )
   })
 
+  it('updates line content when input keeps the same text length', () => {
+    const { element, textarea } = mountEditor('const value = 1;\n')
+
+    flushAnimationFrames()
+
+    const lineBeforeInput = element.querySelector('.ipe-codeEditor__line')
+    expect(lineBeforeInput?.textContent).toBe('const value = 1;')
+
+    textarea.value = 'const value = 2;\n'
+    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    flushAnimationFrames()
+
+    const lineAfterInput = element.querySelector('.ipe-codeEditor__line')
+    expect(lineAfterInput?.textContent).toBe('const value = 2;')
+  })
+
+  it('debounces highlight updates for very large input content', () => {
+    const { textarea } = mountEditor(createLongValue(2200))
+
+    flushAnimationFrames()
+    pretextAdapterMocks.preparePretextSegments.mockClear()
+    pretextAdapterMocks.layoutPretextSegments.mockClear()
+
+    textarea.value = createLongValue(2400)
+    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+
+    expect(frameQueue.length).toBe(0)
+    expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(79)
+    expect(frameQueue.length).toBe(0)
+
+    vi.advanceTimersByTime(1)
+    expect(frameQueue.length).toBe(1)
+
+    flushAnimationFrames()
+
+    expect(pretextAdapterMocks.preparePretextSegments).toHaveBeenCalledTimes(1)
+    expect(pretextAdapterMocks.layoutPretextSegments).toHaveBeenCalledTimes(1)
+  })
+
   it('reuses prepared text on resize and only recomputes layout', () => {
     const { metrics } = mountEditor()
 
@@ -212,6 +262,120 @@ describe('SyntaxHighlightedTextarea renderer', () => {
 
     expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
     expect(pretextAdapterMocks.layoutPretextSegments).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips layout recompute when resize only changes editor height', () => {
+    const { metrics } = mountEditor()
+
+    flushAnimationFrames()
+    pretextAdapterMocks.preparePretextSegments.mockClear()
+    pretextAdapterMocks.layoutPretextSegments.mockClear()
+
+    metrics.clientHeight = 260
+    metrics.scrollHeight = 340
+    MockResizeObserver.instances[0]?.trigger()
+    flushAnimationFrames()
+
+    expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
+    expect(pretextAdapterMocks.layoutPretextSegments).not.toHaveBeenCalled()
+  })
+
+  it('updates viewport lines on height-only resize without full recompute', () => {
+    const { element, metrics } = mountEditor(createLongValue(220))
+
+    flushAnimationFrames()
+
+    const renderedLinesBeforeResize = element.querySelectorAll('.ipe-codeEditor__line').length
+    pretextAdapterMocks.preparePretextSegments.mockClear()
+    pretextAdapterMocks.layoutPretextSegments.mockClear()
+
+    metrics.clientHeight = 360
+    metrics.scrollHeight = 520
+    MockResizeObserver.instances[0]?.trigger()
+    flushAnimationFrames()
+
+    const renderedLinesAfterResize = element.querySelectorAll('.ipe-codeEditor__line').length
+
+    expect(renderedLinesAfterResize).toBeGreaterThan(renderedLinesBeforeResize)
+    expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
+    expect(pretextAdapterMocks.layoutPretextSegments).not.toHaveBeenCalled()
+  })
+
+  it('renders only viewport lines for long documents', () => {
+    const { element } = mountEditor(createLongValue(220))
+
+    flushAnimationFrames()
+
+    const renderedLines = element.querySelectorAll('.ipe-codeEditor__line').length
+    const spacers = element.querySelectorAll('.ipe-codeEditor__spacer').length
+
+    expect(renderedLines).toBeGreaterThan(0)
+    expect(renderedLines).toBeLessThan(220)
+    expect(spacers).toBeGreaterThan(0)
+  })
+
+  it('updates viewport on scroll without recomputing layout', () => {
+    const { element, textarea } = mountEditor(createLongValue(220))
+
+    flushAnimationFrames()
+
+    const firstVisibleLineBeforeScroll = element.querySelector('.ipe-codeEditor__line')?.textContent
+    pretextAdapterMocks.preparePretextSegments.mockClear()
+    pretextAdapterMocks.layoutPretextSegments.mockClear()
+
+    textarea.scrollTop = 2400
+    textarea.dispatchEvent(new Event('scroll', { bubbles: true }))
+    flushAnimationFrames()
+
+    const firstVisibleLineAfterScroll = element.querySelector('.ipe-codeEditor__line')?.textContent
+
+    expect(firstVisibleLineBeforeScroll).toBeDefined()
+    expect(firstVisibleLineAfterScroll).toBeDefined()
+    expect(firstVisibleLineAfterScroll).not.toBe(firstVisibleLineBeforeScroll)
+    expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
+    expect(pretextAdapterMocks.layoutPretextSegments).not.toHaveBeenCalled()
+  })
+
+  it('skips viewport scheduling when scroll does not cross window boundary', () => {
+    const { element, textarea } = mountEditor(createLongValue(220))
+
+    flushAnimationFrames()
+
+    const firstVisibleLineBeforeScroll = element.querySelector('.ipe-codeEditor__line')?.textContent
+    pretextAdapterMocks.preparePretextSegments.mockClear()
+    pretextAdapterMocks.layoutPretextSegments.mockClear()
+
+    textarea.scrollTop = 1
+    textarea.dispatchEvent(new Event('scroll', { bubbles: true }))
+
+    expect(frameQueue.length).toBe(0)
+
+    const firstVisibleLineAfterScroll = element.querySelector('.ipe-codeEditor__line')?.textContent
+    expect(firstVisibleLineAfterScroll).toBe(firstVisibleLineBeforeScroll)
+    expect(pretextAdapterMocks.preparePretextSegments).not.toHaveBeenCalled()
+    expect(pretextAdapterMocks.layoutPretextSegments).not.toHaveBeenCalled()
+  })
+
+  it('reuses overlapping line nodes when scrolling small distance', () => {
+    const { element, textarea } = mountEditor(createLongValue(220))
+
+    flushAnimationFrames()
+
+    const lineText = 'const line_020 = 20;'
+    const findLineNode = () =>
+      Array.from(element.querySelectorAll('.ipe-codeEditor__line')).find(
+        (line) => line.textContent === lineText
+      )
+
+    const beforeScrollNode = findLineNode()
+    expect(beforeScrollNode).toBeTruthy()
+
+    textarea.scrollTop = 24
+    textarea.dispatchEvent(new Event('scroll', { bubbles: true }))
+    flushAnimationFrames()
+
+    const afterScrollNode = findLineNode()
+    expect(afterScrollNode).toBe(beforeScrollNode)
   })
 
   it('falls back to the DOM renderer when pretext throws', () => {
