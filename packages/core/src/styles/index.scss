@@ -165,9 +165,7 @@
     box-sizing: border-box;
     line-height: var(--line-height-input);
     padding: var(--padding-input-y) var(--padding-input-x);
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    tab-size: 2;
+    tab-size: 8;
   }
 
   .ipe-codeEditor__highlightViewport {
@@ -185,6 +183,24 @@
   .ipe-codeEditor__highlight {
     min-height: 100%;
     color: var(--color-text-dark);
+    overflow: hidden;
+  }
+
+  .ipe-codeEditor__highlight--dom {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  .ipe-codeEditor__highlight--pretext {
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  .ipe-codeEditor__line {
+    display: block;
+    white-space: pre;
+    overflow-wrap: normal;
+    unicode-bidi: plaintext;
   }
 
   .ipe-codeEditor__textarea {
@@ -196,6 +212,8 @@
     color: transparent;
     caret-color: var(--color-text-dark);
     resize: vertical;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
   }
 
   .ipe-codeEditor__textarea[name='text'],

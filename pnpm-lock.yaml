@@ -162,6 +162,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@chenglou/pretext':
+        specifier: 0.0.4
+        version: 0.0.4
       '@cordisjs/core':
         specifier: ^3.18.1
         version: 3.18.1
@@ -241,6 +244,9 @@ importers:
       hono:
         specifier: ^4.10.2
         version: 4.10.2
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       jsx-dom:
         specifier: ^8.1.6
         version: 8.1.6
@@ -516,6 +522,9 @@ packages:
 
   '@bufbuild/protobuf@2.7.0':
     resolution: {integrity: sha512-qn6tAIZEw5i/wiESBF4nQxZkl86aY4KoO0IkUa2Lh+rya64oTOdJQFlZuMwI1Qz9VBJQrQC4QlSA2DNek5gCOA==}
+
+  '@chenglou/pretext@0.0.4':
+    resolution: {integrity: sha512-FnPAFMid1/p1j2V2gRPUVBarGUIb2PhkkC9YNnTOfPtTDgHKh8siO8PP9pCxpFfYlcodWPJpE1UbSHGQqt8pQQ==}
 
   '@chevrotain/cst-dts-gen@11.0.3':
     resolution: {integrity: sha512-BvIKpRLeS/8UbfxXxgC33xOumsacaeCKAjAeLyOn7Pcp95HiRbrpl14S+9vaZLolnbssPIUuiUd8IvgkRyt6NQ==}
@@ -5607,6 +5616,8 @@ snapshots:
   '@braintree/sanitize-url@7.1.1': {}
 
   '@bufbuild/protobuf@2.7.0': {}
+
+  '@chenglou/pretext@0.0.4': {}
 
   '@chevrotain/cst-dts-gen@11.0.3':
     dependencies:

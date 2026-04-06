@@ -84,6 +84,7 @@
     "eslint": "^9.39.2",
     "globals": "^17.0.0",
     "hono": "^4.10.2",
+    "jsdom": "^26.1.0",
     "jsx-dom": "^8.1.6",
     "npm-run-all2": "^8.0.4",
     "prettier": "^3.7.4",
@@ -101,6 +102,7 @@
     "vue-tsc": "^3.2.2"
   },
   "dependencies": {
+    "@chenglou/pretext": "0.0.4",
     "@cordisjs/core": "^3.18.1",
     "@inpageedit/logger": "^0.1.0",
     "@inpageedit/modal": "workspace:^",
