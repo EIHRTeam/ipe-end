@@ -32,6 +32,9 @@ globalThis.SVGElement = window.SVGElement
 globalThis.localStorage = window.localStorage
 globalThis.sessionStorage = window.sessionStorage
 Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true })
+if (typeof window.document.queryCommandSupported !== 'function') {
+  window.document.queryCommandSupported = () => false
+}
 globalThis.customElements =
   window.customElements ||
   ({
