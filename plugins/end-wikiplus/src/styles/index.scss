@@ -156,6 +156,7 @@ body[data-end-wikiplus-ipe='active'] {
 .endwiki-monacoEditor__surface {
   position: relative;
   overflow: hidden;
+  min-height: max(18rem, var(--textarea-min-height, 20em));
   border: var(--border-width) solid var(--color-border-input);
   border-radius: var(--border-radius-input);
   background: var(--textarea-background);
@@ -171,8 +172,8 @@ body[data-end-wikiplus-ipe='active'] {
 
 .endwiki-monacoEditor__container {
   width: 100%;
-  height: var(--textarea-height);
-  min-height: var(--textarea-min-height);
+  height: max(22rem, var(--textarea-height, 50vh));
+  min-height: max(18rem, var(--textarea-min-height, 20em));
 }
 
 .endwiki-monacoEditor__compatTextarea {
@@ -187,6 +188,11 @@ body[data-end-wikiplus-ipe='active'] {
 
 .endwiki-monacoEditor[data-editor-mode='textarea'] .endwiki-monacoEditor__compatTextarea {
   display: block;
+}
+
+.endwiki-monacoEditor[data-editor-mode='textarea'] .endwiki-monacoEditor__compatTextarea[name='text'] {
+  height: max(22rem, var(--textarea-height, 50vh));
+  min-height: max(18rem, var(--textarea-min-height, 20em));
 }
 
 @media (max-width: 960px) {

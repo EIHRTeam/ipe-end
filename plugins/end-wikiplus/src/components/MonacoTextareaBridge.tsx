@@ -11,6 +11,8 @@ export interface MonacoTextareaBridgeHandle {
   isReady(): boolean
 }
 
+export type MonacoThemeMode = 'auto' | 'light' | 'dark'
+
 export interface MonacoTextareaBridgeProps {
   id?: string
   language?: string
@@ -20,6 +22,7 @@ export interface MonacoTextareaBridgeProps {
   spellcheck?: boolean
   textareaClassName?: string
   textareaStyle?: Record<string, string>
+  themeMode?: MonacoThemeMode
   value?: string
 }
 
@@ -88,6 +91,29 @@ function applyInlineStyle(element: HTMLElement | null, style?: Record<string, st
     }
     ;(element.style as unknown as Record<string, string>)[key] = value
   }
+}
+
+function resolveMonacoTheme(themeMode: MonacoThemeMode | undefined): 'vs' | 'vs-dark' {
+  if (themeMode === 'dark') {
+    return 'vs-dark'
+  }
+  if (themeMode === 'light') {
+    return 'vs'
+  }
+
+  const ipeTheme = document.body?.getAttribute('data-ipe-theme')
+  if (ipeTheme === 'dark') {
+    return 'vs-dark'
+  }
+  if (ipeTheme === 'light') {
+    return 'vs'
+  }
+
+  if (typeof matchMedia === 'function') {
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs'
+  }
+
+  return 'vs'
 }
 
 export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
@@ -181,6 +207,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
       }
 
       ensureMonacoEnvironment(runtime.editorWorker, runtime.jsonWorker)
+      runtime.monaco.editor.setTheme(resolveMonacoTheme(props.themeMode))
 
       const styleTarget = surfaceRef || containerRef
       const computedStyle = styleTarget.ownerDocument.defaultView?.getComputedStyle(styleTarget)

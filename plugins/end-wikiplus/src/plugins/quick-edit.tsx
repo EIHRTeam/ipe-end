@@ -17,6 +17,7 @@ import type { ReactNode } from 'jsx-dom'
 import {
   MonacoTextareaBridge,
   type MonacoTextareaBridgeHandle,
+  type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
 import { parseJsonObject, prettyJson } from '@plugin/utils/result'
 
@@ -46,6 +47,7 @@ declare module '@/InPageEdit' {
     'quickEdit.watchList': WatchlistAction
     'quickEdit.keyshortcut.save': string
     'quickEdit.editFont': string
+    'quickEdit.monacoTheme': MonacoThemeMode
   }
 }
 
@@ -137,6 +139,13 @@ export interface EndWikiQuickEditSubmitPayload {
     ])
       .description("Font to use in quick edit's textarea")
       .default('preferences'),
+    'quickEdit.monacoTheme': Schema.union([
+      Schema.const('auto').description('Follow IPE/system theme'),
+      Schema.const('light').description('Light mode'),
+      Schema.const('dark').description('Dark mode'),
+    ])
+      .description('Monaco editor theme')
+      .default('auto'),
   })
     .description('Quick edit options')
     .extra('category', 'editor')
@@ -189,6 +198,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       typeof payload.editMinor === 'boolean'
         ? payload.editMinor
         : (await this.ctx.preferences.get('quickEdit.editMinor'))!
+    const monacoTheme =
+      ((await this.ctx.preferences.get('quickEdit.monacoTheme')) as MonacoThemeMode) || 'auto'
     const fontOptions = await this.getEditFontOptions()
 
     const options: EndWikiQuickEditOptions = {
@@ -350,6 +361,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             id="wpTextbox1"
             spellcheck={false}
             language="json"
+            themeMode={monacoTheme}
             value={editingContent}
             onReady={(bridge) => {
               editorBridge = bridge
