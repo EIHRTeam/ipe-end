@@ -233,6 +233,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         sizeClass: 'large',
         center: true,
         outSideClose,
+        fixedHeight: true,
       })
       .init()
     modal.setTitle(
@@ -324,6 +325,12 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     })
 
     let editorBridge: MonacoTextareaBridgeHandle | null = null
+    let editFormRef: HTMLFormElement | null = null
+    let editorContentRef: HTMLDivElement | null = null
+    let editorLayoutFrameId = 0
+    let editorLayoutTimerIds: number[] = []
+    let editorLayoutObserver: ResizeObserver | null = null
+
     let fallbackNotified = false
     const syncEditorValue = () => {
       editorBridge?.syncTextarea()
@@ -347,12 +354,160 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
     }
 
+    const getNumericCssValue = (value: string | null | undefined) => {
+      if (!value) {
+        return 0
+      }
+      const parsed = Number.parseFloat(value)
+      return Number.isFinite(parsed) ? parsed : 0
+    }
+
+    const getModalContentInnerHeight = () => {
+      const modalContent = modal.get$content()
+      const computedStyle = modalContent.ownerDocument.defaultView?.getComputedStyle(modalContent)
+      const paddingBlock =
+        getNumericCssValue(computedStyle?.paddingTop) + getNumericCssValue(computedStyle?.paddingBottom)
+      return Math.max(0, modalContent.clientHeight - paddingBlock)
+    }
+
+    const syncEditorLayout = () => {
+      if (!editFormRef || !editorContentRef) {
+        return
+      }
+
+      const computedStyle = editFormRef.ownerDocument.defaultView?.getComputedStyle(editFormRef)
+      const rowGap = getNumericCssValue(computedStyle?.rowGap || computedStyle?.gap)
+      const visibleChildren = Array.from(editFormRef.children).filter(
+        (node) => (node as HTMLElement).offsetParent !== null
+      )
+      const totalGap = Math.max(0, visibleChildren.length - 1) * rowGap
+      const occupiedHeight = visibleChildren.reduce((height, node) => {
+        if (node === editorContentRef) {
+          return height
+        }
+        return height + (node as HTMLElement).offsetHeight
+      }, 0)
+
+      const contentHeight = getModalContentInnerHeight() || editFormRef.clientHeight
+      const availableHeight = contentHeight - occupiedHeight - totalGap
+      const nextHeight = Math.max(0, Math.floor(availableHeight))
+
+      editFormRef.style.height = `${Math.max(0, Math.floor(contentHeight))}px`
+      editFormRef.style.minHeight = '0'
+      editorContentRef.style.height = `${nextHeight}px`
+      editorContentRef.style.minHeight = '0'
+    }
+
+    const scheduleEditorLayoutSync = () => {
+      if (!editFormRef) {
+        return
+      }
+
+      const view = editFormRef.ownerDocument.defaultView || window
+      if (editorLayoutFrameId) {
+        view.cancelAnimationFrame(editorLayoutFrameId)
+      }
+
+      editorLayoutFrameId = view.requestAnimationFrame(() => {
+        editorLayoutFrameId = 0
+        syncEditorLayout()
+      })
+    }
+
+    const queueEditorLayoutSync = (delay = 0) => {
+      if (!editFormRef) {
+        return
+      }
+
+      const view = editFormRef.ownerDocument.defaultView || window
+      if (delay <= 0) {
+        scheduleEditorLayoutSync()
+        return
+      }
+
+      const timerId = view.setTimeout(() => {
+        editorLayoutTimerIds = editorLayoutTimerIds.filter((id) => id !== timerId)
+        scheduleEditorLayoutSync()
+      }, delay)
+      editorLayoutTimerIds.push(timerId)
+    }
+
+    const setupEditorLayoutSync = () => {
+      if (!editFormRef) {
+        return
+      }
+
+      const view = editFormRef.ownerDocument.defaultView || window
+      const modalContent = modal.get$content()
+      const syncTargets = Array.from(
+        new Set([editFormRef, modalContent, ...Array.from(editFormRef.children)].filter(Boolean))
+      ) as Element[]
+
+      if (typeof ResizeObserver !== 'undefined') {
+        editorLayoutObserver = new ResizeObserver(() => {
+          scheduleEditorLayoutSync()
+        })
+        for (const target of syncTargets) {
+          editorLayoutObserver.observe(target)
+        }
+      }
+
+      const onWindowResize = () => {
+        scheduleEditorLayoutSync()
+      }
+
+      view.addEventListener('resize', onWindowResize)
+      queueEditorLayoutSync(0)
+      queueEditorLayoutSync(48)
+      queueEditorLayoutSync(140)
+      queueEditorLayoutSync(360)
+
+      modal.on(modal.Event.Close, () => {
+        if (editorLayoutFrameId) {
+          view.cancelAnimationFrame(editorLayoutFrameId)
+          editorLayoutFrameId = 0
+        }
+
+        for (const timerId of editorLayoutTimerIds) {
+          view.clearTimeout(timerId)
+        }
+        editorLayoutTimerIds = []
+
+        editorLayoutObserver?.disconnect()
+        editorLayoutObserver = null
+        view.removeEventListener('resize', onWindowResize)
+      })
+    }
+
     const editForm = (
-      <form className="ipe-quickEdit__form">
+      <form
+        ref={(el) => {
+          editFormRef = el as HTMLFormElement
+        }}
+        className="ipe-quickEdit__form"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+          gap: '1rem',
+          height: '100%',
+          minHeight: '0',
+        }}
+      >
         <div className="ipe-quickEdit__notices">{editNotices}</div>
         <div
+          ref={(el) => {
+            editorContentRef = el as HTMLDivElement
+          }}
           className="ipe-quickEdit__content"
-          style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1 1 0',
+            height: '100%',
+            minHeight: '0',
+          }}
         >
           <MonacoTextareaBridge
             textareaClassName={`ipe-quickEdit__textarea ${fontOptions.className}`}
@@ -383,8 +538,9 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           style={{
             display: 'flex',
             flexDirection: 'column',
+            flex: '0 0 auto',
             gap: '1rem',
-            marginTop: '1rem',
+            marginTop: '0',
           }}
         >
           <InputBox label={$`Summary`} id="summary" name="summary" value={options.editSummary} />
@@ -424,6 +580,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       </form>
     ) as HTMLFormElement
     modal.setContent(editForm)
+    setupEditorLayoutSync()
 
     let dismissWarnings = false
     modal.addButton(

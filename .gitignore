@@ -111,3 +111,4 @@ lib
 
 # Fuck you macOS
 .DS_Store
+plugins/end-wikiplus/artifacts/*.zip

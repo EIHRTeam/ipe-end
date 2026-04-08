@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
-import { readFileSync, mkdirSync, copyFileSync } from 'node:fs'
+import { readFileSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs'
 import Vue from '@vitejs/plugin-vue'
+import { transform } from 'esbuild'
 
 const ROOT = resolve(import.meta.dirname)
 const OUT_ROOT = resolve(ROOT, 'artifacts/inpageedit-next-end-wikiplus')
+const OUT_ENTRY = resolve(OUT_ROOT, 'dist/index.js')
 const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { version: string }
 
 export default defineConfig({
@@ -21,6 +23,21 @@ export default defineConfig({
       closeBundle() {
         mkdirSync(OUT_ROOT, { recursive: true })
         copyFileSync(resolve(ROOT, 'manifest.json'), resolve(OUT_ROOT, 'manifest.json'))
+      },
+    },
+    {
+      name: 'downlevel-bundle-for-host',
+      async closeBundle() {
+        const source = readFileSync(OUT_ENTRY, 'utf8')
+        const result = await transform(source, {
+          loader: 'js',
+          format: 'esm',
+          target: 'es2020',
+          legalComments: 'none',
+          sourcemap: false,
+          charset: 'utf8',
+        })
+        writeFileSync(OUT_ENTRY, result.code)
       },
     },
   ],

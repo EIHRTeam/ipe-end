@@ -1,4 +1,4 @@
-import '@/styles/index.scss'
+import '@plugin/styles/index.scss'
 
 import { PluginToolbox } from '@/plugins/toolbox'
 import type { HostPluginContext, HostPluginModule } from '@plugin/types/host'

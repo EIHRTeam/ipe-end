@@ -1,12 +1,13 @@
 {
   "name": "@inpageedit/end-wikiplus",
   "private": true,
-  "version": "2.0.2",
+  "version": "2.0.6",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "smoke": "pnpm build && node ./scripts/smoke.mjs"
+    "smoke": "pnpm build && node ./scripts/smoke.mjs",
+    "package:zip": "node ./scripts/package-zip.mjs"
   },
   "dependencies": {
     "@cordisjs/core": "^3.18.1",
@@ -19,10 +20,11 @@
     "vue": "^3.5.26"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.3",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "esbuild": "^0.28.0",
     "jsdom": "^26.1.0",
     "sass-embedded": "^1.97.2",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^8.0.7"
   }
 }

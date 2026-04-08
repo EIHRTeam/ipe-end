@@ -128,9 +128,117 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
   let modelDisposable: IDisposable | null = null
   let blurDisposable: IDisposable | null = null
   let editorInstance: MonacoEditor.IStandaloneCodeEditor | null = null
+  let layoutFrameIds: number[] = []
+  let layoutTimerIds: number[] = []
 
   const initialValue = props.value ?? ''
   const language = props.language || 'json'
+  const defaultRootStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: '1 1 auto',
+    height: '100%',
+    minHeight: '0',
+  }
+  const defaultEditorSizeStyle = {
+    display: 'flex',
+    flex: '1 1 auto',
+    width: '100%',
+    height: '100%',
+    minHeight: '0',
+  }
+
+  const defaultTextareaStyle = {
+    ...defaultEditorSizeStyle,
+    ...props.textareaStyle,
+  }
+
+  const removeFrameId = (id: number) => {
+    layoutFrameIds = layoutFrameIds.filter((current) => current !== id)
+  }
+
+  const removeTimerId = (id: number) => {
+    layoutTimerIds = layoutTimerIds.filter((current) => current !== id)
+  }
+
+  const getLayoutSize = () => {
+    if (!containerRef) {
+      return { width: 0, height: 0 }
+    }
+    const width = containerRef.clientWidth || containerRef.offsetWidth || 0
+    const height = containerRef.clientHeight || containerRef.offsetHeight || 0
+    return { width, height }
+  }
+
+  const runLayout = () => {
+    if (!editorInstance || !containerRef) {
+      return
+    }
+    const { width, height } = getLayoutSize()
+    if (!width || !height) {
+      return
+    }
+    editorInstance.layout({ width, height })
+  }
+
+  const scheduleLayout = (delay = 0) => {
+    if (!containerRef) {
+      return
+    }
+    const view = containerRef.ownerDocument.defaultView || window
+    if (delay <= 0) {
+      const frameId = view.requestAnimationFrame(() => {
+        removeFrameId(frameId)
+        runLayout()
+      })
+      layoutFrameIds.push(frameId)
+      return
+    }
+
+    const timerId = view.setTimeout(() => {
+      removeTimerId(timerId)
+      const frameId = view.requestAnimationFrame(() => {
+        removeFrameId(frameId)
+        runLayout()
+      })
+      layoutFrameIds.push(frameId)
+    }, delay)
+    layoutTimerIds.push(timerId)
+  }
+
+  const scheduleLayoutPasses = () => {
+    scheduleLayout(0)
+    scheduleLayout(32)
+    scheduleLayout(96)
+    scheduleLayout(240)
+    scheduleLayout(560)
+  }
+
+  const waitForContainerVisibility = async (token: number) => {
+    if (!containerRef) {
+      return
+    }
+
+    const view = containerRef.ownerDocument.defaultView || window
+    for (let i = 0; i < 20; i += 1) {
+      if (token !== mountToken || !containerRef) {
+        return
+      }
+
+      const { width, height } = getLayoutSize()
+      if (width > 48 && height > 48) {
+        return
+      }
+
+      await new Promise<void>((resolve) => {
+        const frameId = view.requestAnimationFrame(() => {
+          removeFrameId(frameId)
+          resolve()
+        })
+        layoutFrameIds.push(frameId)
+      })
+    }
+  }
 
   const syncTextarea = () => {
     if (!textareaRef) {
@@ -141,6 +249,14 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
 
   const dispose = () => {
     mountToken += 1
+    for (const frameId of layoutFrameIds) {
+      cancelAnimationFrame(frameId)
+    }
+    layoutFrameIds = []
+    for (const timerId of layoutTimerIds) {
+      clearTimeout(timerId)
+    }
+    layoutTimerIds = []
     modelDisposable?.dispose()
     modelDisposable = null
     blurDisposable?.dispose()
@@ -206,6 +322,11 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         return
       }
 
+      await waitForContainerVisibility(currentToken)
+      if (currentToken !== mountToken || !containerRef || !textareaRef) {
+        return
+      }
+
       ensureMonacoEnvironment(runtime.editorWorker, runtime.jsonWorker)
       runtime.monaco.editor.setTheme(resolveMonacoTheme(props.themeMode))
 
@@ -238,6 +359,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
 
       setMode('monaco')
       syncTextarea()
+      scheduleLayoutPasses()
       props.onReady?.(handle)
     } catch (error) {
       enableTextareaFallback(error)
@@ -268,6 +390,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         setMode('loading')
         watchDisconnect(rootRef)
       }}
+      style={defaultRootStyle}
       className="endwiki-monacoEditor"
       data-editor-mode="loading"
     >
@@ -276,6 +399,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
           surfaceRef = el as HTMLDivElement
           applyInlineStyle(surfaceRef, props.textareaStyle)
         }}
+        style={defaultEditorSizeStyle}
         className={`endwiki-monacoEditor__surface ${props.textareaClassName || ''}`}
       >
         <div
@@ -285,6 +409,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
               void mountEditor()
             })
           }}
+          style={defaultEditorSizeStyle}
           className="endwiki-monacoEditor__container"
         ></div>
         <textarea
@@ -296,7 +421,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
             }
           }}
           className={`endwiki-monacoEditor__compatTextarea ${props.textareaClassName || ''}`}
-          style={props.textareaStyle}
+          style={defaultTextareaStyle}
           name={props.name}
           id={props.id}
           spellCheck={props.spellcheck}
