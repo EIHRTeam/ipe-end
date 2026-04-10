@@ -24,6 +24,7 @@ import {
   createSubmitPayload,
   getSubmitPayloadCommitMsg,
   getSubmitPayloadCommitMsgEdit,
+  hasSubmitPayloadEnvelope,
   parseSubmitPayload,
   readSubmitPayload,
 } from '@plugin/utils/itemSubmitPayload'
@@ -393,9 +394,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
 
       try {
-        const payload = readSubmitPayload(editorValue, getSummaryValue())
         isSyncingCommitMsgFromEditor = true
-        setSummaryValue(payload.commitMsg)
+        setSummaryValue(getSubmitPayloadCommitMsg(editorValue, getSummaryValue()))
       } catch {
         // Keep the side input editable while the JSON is temporarily invalid.
       } finally {
@@ -411,8 +411,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       try {
         const rawEditorValue = getEditorValue()
         isSyncingCommitMsgFromField = true
-        const payload = readSubmitPayload(rawEditorValue, commitMsg)
-        if (!payload.hasSubmitEnvelope) {
+        if (!hasSubmitPayloadEnvelope(rawEditorValue)) {
+          const payload = readSubmitPayload(rawEditorValue, commitMsg)
           setEditorValue(
             prettyJson({
               item: payload.item,
@@ -540,6 +540,10 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
 
       floatingExitButton?.classList.toggle('is-active', nextMode !== 'default')
       windowFullscreenButton?.classList.toggle('is-active', nextMode === 'window-fullscreen')
+      windowFullscreenButton?.setAttribute(
+        'aria-pressed',
+        nextMode === 'window-fullscreen' ? 'true' : 'false'
+      )
 
       if (hostBody) {
         hostBody.classList.toggle(HOST_FULLSCREEN_CLASS, nextMode !== 'default')
@@ -591,6 +595,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           void enterWindowFullscreen()
         }
       )
+      windowFullscreenButton.setAttribute('aria-pressed', 'false')
 
       if (closeButton) {
         icons.insertBefore(windowFullscreenButton, closeButton)

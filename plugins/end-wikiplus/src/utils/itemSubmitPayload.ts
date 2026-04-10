@@ -17,12 +17,15 @@ export interface EndWikiSubmitPayloadTextEdit {
 
 const SERVER_ONLY_NULLABLE_FIELDS = ['createdUser', 'lastUpdatedUser'] as const
 
-function cloneJsonRecord(value: Record<string, unknown>) {
+function cloneSubmitRecord(value: Record<string, unknown>) {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value) as Record<string, unknown>
+  }
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
 }
 
-function normalizeItemForSubmit(item: Record<string, unknown>) {
-  const nextItem = cloneJsonRecord(item)
+function normalizeItemForSubmit(item: Record<string, unknown>, clone = true) {
+  const nextItem = clone ? cloneSubmitRecord(item) : item
 
   if ('status' in nextItem) {
     nextItem.status = 0
@@ -234,6 +237,25 @@ function inspectRootObject(raw: string) {
   }
 }
 
+function findRootProperty(raw: string, key: string) {
+  return inspectRootObject(raw).properties.find((property) => property.key === key) || null
+}
+
+function readRootStringProperty(raw: string, key: string) {
+  const property = findRootProperty(raw, key)
+  if (!property || raw[property.valueStart] !== '"') {
+    return null
+  }
+
+  const parsed = JSON.parse(raw.slice(property.valueStart, property.valueEnd)) as unknown
+  return typeof parsed === 'string' ? parsed : null
+}
+
+export function hasSubmitPayloadEnvelope(raw: string) {
+  const root = inspectRootObject(raw)
+  return root.properties.some((property) => property.key === 'item' || property.key === 'commitMsg')
+}
+
 function buildRootStringPropertyEdit(raw: string, key: string, nextValue: string) {
   const root = inspectRootObject(raw)
   const encodedKey = JSON.stringify(key)
@@ -325,7 +347,7 @@ export function createSubmitPayload(
   }
 
   return {
-    item: normalizeItemForSubmit(extractFormalItem(value)),
+    item: normalizeItemForSubmit(extractFormalItem(value), true),
     commitMsg: extractCommitMsg(value, fallbackCommitMsg),
   }
 }
@@ -337,14 +359,14 @@ export function parseSubmitPayload(
   const parsed = readSubmitPayload(raw, fallbackCommitMsg)
 
   return {
-    item: normalizeItemForSubmit(parsed.item),
+    item: normalizeItemForSubmit(parsed.item, false),
     commitMsg: parsed.commitMsg,
     hasSubmitEnvelope: parsed.hasSubmitEnvelope,
   }
 }
 
 export function getSubmitPayloadCommitMsg(raw: string, fallbackCommitMsg = '') {
-  return readSubmitPayload(raw, fallbackCommitMsg).commitMsg
+  return readRootStringProperty(raw, 'commitMsg') ?? fallbackCommitMsg
 }
 
 export function getSubmitPayloadCommitMsgEdit(raw: string, commitMsg: string) {
