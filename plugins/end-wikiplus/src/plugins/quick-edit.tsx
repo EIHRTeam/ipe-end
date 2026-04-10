@@ -19,7 +19,15 @@ import {
   type MonacoTextareaBridgeHandle,
   type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
-import { parseJsonObject, prettyJson } from '@plugin/utils/result'
+import { prettyJson } from '@plugin/utils/result'
+import {
+  createSubmitPayload,
+  getSubmitPayloadCommitMsg,
+  getSubmitPayloadCommitMsgEdit,
+  hasSubmitPayloadEnvelope,
+  parseSubmitPayload,
+  readSubmitPayload,
+} from '@plugin/utils/itemSubmitPayload'
 
 declare module '@/InPageEdit' {
   interface InPageEdit {
@@ -52,6 +60,8 @@ declare module '@/InPageEdit' {
 }
 
 const BUILT_IN_FONT_OPTIONS = ['preferences', 'monospace', 'sans-serif', 'serif'] as const
+type EndWikiQuickEditPresentationMode = 'default' | 'window-fullscreen'
+const HOST_FULLSCREEN_CLASS = 'endwiki-quickEditHostFullscreen'
 
 type HostQuickEditRevision = {
   content: string
@@ -289,6 +299,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     this.ctx.emit('quick-edit/show-modal', { ctx: this.ctx, modal, options })
 
     const editingContent = wikiPage.revisions[0]?.content || ''
+    const initialCommitMsg = getSubmitPayloadCommitMsg(editingContent, options.editSummary)
     const isCreatingNewPage = wikiPage.pageid === 0
 
     modal.setTitle(
@@ -327,9 +338,15 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     let editorBridge: MonacoTextareaBridgeHandle | null = null
     let editFormRef: HTMLFormElement | null = null
     let editorContentRef: HTMLDivElement | null = null
+    let summaryInputRef: HTMLInputElement | null = null
     let editorLayoutFrameId = 0
     let editorLayoutTimerIds: number[] = []
     let editorLayoutObserver: ResizeObserver | null = null
+    let presentationMode: EndWikiQuickEditPresentationMode = 'default'
+    let floatingExitButton: HTMLButtonElement | null = null
+    let windowFullscreenButton: HTMLButtonElement | null = null
+    let isSyncingCommitMsgFromEditor = false
+    let isSyncingCommitMsgFromField = false
 
     let fallbackNotified = false
     const syncEditorValue = () => {
@@ -351,6 +368,70 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       const textarea = getFallbackTextarea()
       if (textarea) {
         textarea.value = value
+      }
+    }
+    const replaceEditorValue = (startOffset: number, endOffset: number, value: string) => {
+      if (editorBridge) {
+        editorBridge.replaceText(startOffset, endOffset, value)
+        return
+      }
+
+      const textarea = getFallbackTextarea()
+      if (textarea) {
+        textarea.value = textarea.value.slice(0, startOffset) + value + textarea.value.slice(endOffset)
+      }
+    }
+    const getSummaryValue = () => summaryInputRef?.value || ''
+    const setSummaryValue = (value: string) => {
+      if (summaryInputRef && summaryInputRef.value !== value) {
+        summaryInputRef.value = value
+      }
+    }
+
+    const syncCommitMsgFieldFromEditor = (editorValue = getEditorValue()) => {
+      if (isSyncingCommitMsgFromField) {
+        return
+      }
+
+      try {
+        isSyncingCommitMsgFromEditor = true
+        setSummaryValue(getSubmitPayloadCommitMsg(editorValue, getSummaryValue()))
+      } catch {
+        // Keep the side input editable while the JSON is temporarily invalid.
+      } finally {
+        isSyncingCommitMsgFromEditor = false
+      }
+    }
+
+    const syncCommitMsgInEditor = (commitMsg: string) => {
+      if (isSyncingCommitMsgFromEditor) {
+        return
+      }
+
+      try {
+        const rawEditorValue = getEditorValue()
+        isSyncingCommitMsgFromField = true
+        if (!hasSubmitPayloadEnvelope(rawEditorValue)) {
+          const payload = readSubmitPayload(rawEditorValue, commitMsg)
+          setEditorValue(
+            prettyJson({
+              item: payload.item,
+              commitMsg,
+            })
+          )
+          return
+        }
+
+        const textEdit = getSubmitPayloadCommitMsgEdit(rawEditorValue, commitMsg)
+        if (!textEdit) {
+          return
+        }
+
+        replaceEditorValue(textEdit.startOffset, textEdit.endOffset, textEdit.newText)
+      } catch {
+        // Leave the editor untouched until the JSON becomes valid again.
+      } finally {
+        isSyncingCommitMsgFromField = false
       }
     }
 
@@ -432,6 +513,108 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       editorLayoutTimerIds.push(timerId)
     }
 
+    const queueEditorLayoutSyncPasses = () => {
+      queueEditorLayoutSync(0)
+      queueEditorLayoutSync(48)
+      queueEditorLayoutSync(140)
+      queueEditorLayoutSync(360)
+    }
+
+    const updatePresentationState = (nextMode: EndWikiQuickEditPresentationMode) => {
+      presentationMode = nextMode
+
+      const modalRoot = modal.get$modal()
+      const modalDocument = getModalDocument()
+      const hostBody = modalDocument.body
+      modalRoot.classList.toggle(
+        'endwiki-quickEditModal--windowFullscreen',
+        nextMode === 'window-fullscreen'
+      )
+
+      if (editorContentRef) {
+        editorContentRef.classList.toggle(
+          'endwiki-quickEdit__content--windowFullscreen',
+          nextMode === 'window-fullscreen'
+        )
+      }
+
+      floatingExitButton?.classList.toggle('is-active', nextMode !== 'default')
+      windowFullscreenButton?.classList.toggle('is-active', nextMode === 'window-fullscreen')
+      windowFullscreenButton?.setAttribute(
+        'aria-pressed',
+        nextMode === 'window-fullscreen' ? 'true' : 'false'
+      )
+
+      if (hostBody) {
+        hostBody.classList.toggle(HOST_FULLSCREEN_CLASS, nextMode !== 'default')
+      }
+
+      queueEditorLayoutSyncPasses()
+    }
+
+    const getModalDocument = () => modal.get$window().ownerDocument
+    const exitPresentationMode = async () => {
+      if (presentationMode !== 'default') {
+        updatePresentationState('default')
+      }
+    }
+
+    const enterWindowFullscreen = async () => {
+      updatePresentationState(
+        presentationMode === 'window-fullscreen' ? 'default' : 'window-fullscreen'
+      )
+    }
+
+    const createHeaderIconButton = (label: string, svgPath: string, onClick: () => void) => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'ipe-modal-modal__icon endwiki-quickEdit__headerIcon'
+      button.title = label
+      button.setAttribute('aria-label', label)
+      button.innerHTML = `
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="${svgPath}" />
+        </svg>
+      `
+      button.addEventListener('click', onClick)
+      return button
+    }
+
+    const setupEditorPresentationControls = () => {
+      if (!editorContentRef) {
+        return
+      }
+
+      const icons = modal.get$icons()
+      const closeButton = icons.querySelector<HTMLButtonElement>('.ipe-modal-modal__close')
+
+      windowFullscreenButton = createHeaderIconButton(
+        $`Window fullscreen`,
+        'M4.75 5.5h10.5a1.25 1.25 0 0 1 1.25 1.25v6.5a1.25 1.25 0 0 1-1.25 1.25H4.75A1.25 1.25 0 0 1 3.5 13.25v-6.5A1.25 1.25 0 0 1 4.75 5.5ZM3.5 8.5h13',
+        () => {
+          void enterWindowFullscreen()
+        }
+      )
+      windowFullscreenButton.setAttribute('aria-pressed', 'false')
+
+      if (closeButton) {
+        icons.insertBefore(windowFullscreenButton, closeButton)
+      } else {
+        icons.append(windowFullscreenButton)
+      }
+
+      floatingExitButton = createHeaderIconButton(
+        $`Exit fullscreen`,
+        'M8 4v4H4M12 4v4h4M16 12h-4v4M8 16v-4H4',
+        () => {
+          void exitPresentationMode()
+        }
+      )
+      floatingExitButton.classList.add('endwiki-quickEdit__floatingExit')
+      editorContentRef.appendChild(floatingExitButton)
+      updatePresentationState('default')
+    }
+
     const setupEditorLayoutSync = () => {
       if (!editFormRef) {
         return
@@ -457,10 +640,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
 
       view.addEventListener('resize', onWindowResize)
-      queueEditorLayoutSync(0)
-      queueEditorLayoutSync(48)
-      queueEditorLayoutSync(140)
-      queueEditorLayoutSync(360)
+      queueEditorLayoutSyncPasses()
 
       modal.on(modal.Event.Close, () => {
         if (editorLayoutFrameId) {
@@ -518,6 +698,9 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             language="json"
             themeMode={monacoTheme}
             value={editingContent}
+            onChange={(value) => {
+              syncCommitMsgFieldFromEditor(value)
+            }}
             onReady={(bridge) => {
               editorBridge = bridge
             }}
@@ -543,7 +726,20 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             marginTop: '0',
           }}
         >
-          <InputBox label={$`Summary`} id="summary" name="summary" value={options.editSummary} />
+          <InputBox
+            label={$`Summary`}
+            id="summary"
+            name="summary"
+            value={initialCommitMsg}
+            inputProps={{
+              ref: (el) => {
+                summaryInputRef = el as HTMLInputElement
+              },
+              onInput: (event: Event) => {
+                syncCommitMsgInEditor((event.target as HTMLInputElement)?.value || '')
+              },
+            }}
+          />
           <div className="ipe-input-box">
             <label htmlFor="watchlist" style={{ display: 'block' }}>
               {$`Watchlist`}
@@ -581,6 +777,20 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     ) as HTMLFormElement
     modal.setContent(editForm)
     setupEditorLayoutSync()
+    setupEditorPresentationControls()
+
+    const onDocumentKeyDownCapture = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || presentationMode === 'default') {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+      void exitPresentationMode()
+    }
+
+    const modalDocument = getModalDocument()
+    modalDocument.addEventListener('keydown', onDocumentKeyDownCapture, true)
 
     let dismissWarnings = false
     modal.addButton(
@@ -692,6 +902,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     }
     window.addEventListener('beforeunload', beforeUnload)
     modal.on(modal.Event.Close, () => {
+      void exitPresentationMode()
+      modalDocument.removeEventListener('keydown', onDocumentKeyDownCapture, true)
       window.removeEventListener('beforeunload', beforeUnload)
       editorBridge?.dispose()
       editorBridge = null
@@ -748,7 +960,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
     }
 
-    const initialContent = prettyJson(sourceObject)
+    const initialContent = prettyJson(createSubmitPayload(sourceObject, payload.editSummary || ''))
 
     return {
       pageid: itemId || currentItem ? 1 : 0,
@@ -760,13 +972,16 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       },
       edit: async ({ text, summary }) => {
         const rawText = text ?? ''
-        const parsed = parseJsonObject(rawText)
+        const parsed = parseSubmitPayload(rawText, summary || '')
+        const submittedItemIdRaw = parsed.item.itemId ?? parsed.item.id ?? itemId
         const submittedItemId =
-          (typeof parsed.itemId === 'string' && parsed.itemId) ||
-          (typeof parsed.id === 'string' && parsed.id) ||
-          itemId
+          typeof submittedItemIdRaw === 'string' && submittedItemIdRaw
+            ? submittedItemIdRaw
+            : submittedItemIdRaw == null
+              ? itemId
+              : String(submittedItemIdRaw)
 
-        await this.ctx.bridge.submitItemUpdate(rawText, summary || '')
+        await this.ctx.bridge.submitItemUpdate(prettyJson(parsed.item), parsed.commitMsg)
         if (submittedItemId) {
           await this.ctx.bridge.clearDraft(submittedItemId, lang)
         }
