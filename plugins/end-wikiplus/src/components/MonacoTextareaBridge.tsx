@@ -17,6 +17,7 @@ export interface MonacoTextareaBridgeProps {
   id?: string
   language?: string
   name: string
+  onChange?: (value: string) => void
   onError?: (error: unknown) => void
   onReady?: (handle: MonacoTextareaBridgeHandle) => void
   spellcheck?: boolean
@@ -247,6 +248,10 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     textareaRef.value = editorInstance ? editorInstance.getValue() : textareaRef.value
   }
 
+  const emitChange = () => {
+    props.onChange?.(editorInstance ? editorInstance.getValue() : textareaRef?.value || '')
+  }
+
   const dispose = () => {
     mountToken += 1
     for (const frameId of layoutFrameIds) {
@@ -351,6 +356,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
 
       modelDisposable = editorInstance.onDidChangeModelContent(() => {
         syncTextarea()
+        emitChange()
       })
 
       blurDisposable = editorInstance.onDidBlurEditorText(() => {
@@ -419,6 +425,9 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
               textareaRef.value = initialValue
               textareaRef.style.display = 'none'
             }
+          }}
+          onInput={() => {
+            emitChange()
           }}
           className={`endwiki-monacoEditor__compatTextarea ${props.textareaClassName || ''}`}
           style={defaultTextareaStyle}
