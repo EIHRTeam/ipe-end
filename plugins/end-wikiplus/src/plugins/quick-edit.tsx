@@ -20,7 +20,13 @@ import {
   type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
 import { prettyJson } from '@plugin/utils/result'
-import { createSubmitPayload, parseSubmitPayload } from '@plugin/utils/itemSubmitPayload'
+import {
+  createSubmitPayload,
+  getSubmitPayloadCommitMsg,
+  getSubmitPayloadCommitMsgEdit,
+  parseSubmitPayload,
+  readSubmitPayload,
+} from '@plugin/utils/itemSubmitPayload'
 
 declare module '@/InPageEdit' {
   interface InPageEdit {
@@ -292,7 +298,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     this.ctx.emit('quick-edit/show-modal', { ctx: this.ctx, modal, options })
 
     const editingContent = wikiPage.revisions[0]?.content || ''
-    const initialSubmitPayload = parseSubmitPayload(editingContent, options.editSummary)
+    const initialCommitMsg = getSubmitPayloadCommitMsg(editingContent, options.editSummary)
     const isCreatingNewPage = wikiPage.pageid === 0
 
     modal.setTitle(
@@ -363,6 +369,17 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
         textarea.value = value
       }
     }
+    const replaceEditorValue = (startOffset: number, endOffset: number, value: string) => {
+      if (editorBridge) {
+        editorBridge.replaceText(startOffset, endOffset, value)
+        return
+      }
+
+      const textarea = getFallbackTextarea()
+      if (textarea) {
+        textarea.value = textarea.value.slice(0, startOffset) + value + textarea.value.slice(endOffset)
+      }
+    }
     const getSummaryValue = () => summaryInputRef?.value || ''
     const setSummaryValue = (value: string) => {
       if (summaryInputRef && summaryInputRef.value !== value) {
@@ -376,7 +393,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
 
       try {
-        const payload = parseSubmitPayload(editorValue, getSummaryValue())
+        const payload = readSubmitPayload(editorValue, getSummaryValue())
         isSyncingCommitMsgFromEditor = true
         setSummaryValue(payload.commitMsg)
       } catch {
@@ -393,18 +410,24 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
 
       try {
         const rawEditorValue = getEditorValue()
-        const payload = parseSubmitPayload(rawEditorValue, commitMsg)
-        if (payload.commitMsg === commitMsg && payload.hasSubmitEnvelope) {
+        isSyncingCommitMsgFromField = true
+        const payload = readSubmitPayload(rawEditorValue, commitMsg)
+        if (!payload.hasSubmitEnvelope) {
+          setEditorValue(
+            prettyJson({
+              item: payload.item,
+              commitMsg,
+            })
+          )
           return
         }
 
-        isSyncingCommitMsgFromField = true
-        setEditorValue(
-          prettyJson({
-            item: payload.item,
-            commitMsg,
-          })
-        )
+        const textEdit = getSubmitPayloadCommitMsgEdit(rawEditorValue, commitMsg)
+        if (!textEdit) {
+          return
+        }
+
+        replaceEditorValue(textEdit.startOffset, textEdit.endOffset, textEdit.newText)
       } catch {
         // Leave the editor untouched until the JSON becomes valid again.
       } finally {
@@ -702,7 +725,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             label={$`Summary`}
             id="summary"
             name="summary"
-            value={initialSubmitPayload.commitMsg}
+            value={initialCommitMsg}
             inputProps={{
               ref: (el) => {
                 summaryInputRef = el as HTMLInputElement
@@ -953,7 +976,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
               ? itemId
               : String(submittedItemIdRaw)
 
-        await this.ctx.bridge.submitItemUpdate(JSON.stringify(parsed.item), parsed.commitMsg)
+        await this.ctx.bridge.submitItemUpdate(prettyJson(parsed.item), parsed.commitMsg)
         if (submittedItemId) {
           await this.ctx.bridge.clearDraft(submittedItemId, lang)
         }

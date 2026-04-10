@@ -5,6 +5,7 @@ import type {
 
 export interface MonacoTextareaBridgeHandle {
   getValue(): string
+  replaceText(startOffset: number, endOffset: number, nextText: string): void
   setValue(nextValue: string): void
   syncTextarea(): void
   dispose(): void
@@ -278,6 +279,35 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         return editorInstance.getValue()
       }
       return textareaRef?.value || ''
+    },
+    replaceText(startOffset: number, endOffset: number, nextText: string) {
+      if (editorInstance) {
+        const model = editorInstance.getModel()
+        if (model) {
+          const start = model.getPositionAt(startOffset)
+          const end = model.getPositionAt(endOffset)
+          editorInstance.executeEdits('endwiki-summary-sync', [
+            {
+              range: {
+                startLineNumber: start.lineNumber,
+                startColumn: start.column,
+                endLineNumber: end.lineNumber,
+                endColumn: end.column,
+              },
+              text: nextText,
+              forceMoveMarkers: true,
+            },
+          ])
+          return
+        }
+      }
+
+      if (textareaRef) {
+        const currentValue = textareaRef.value
+        textareaRef.value =
+          currentValue.slice(0, startOffset) + nextText + currentValue.slice(endOffset)
+        emitChange()
+      }
     },
     setValue(nextValue: string) {
       if (editorInstance && editorInstance.getValue() !== nextValue) {
