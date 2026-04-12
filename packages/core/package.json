@@ -102,7 +102,7 @@
     "vue-tsc": "^3.2.2"
   },
   "dependencies": {
-    "@chenglou/pretext": "0.0.4",
+    "@chenglou/pretext": "0.0.5",
     "@cordisjs/core": "^3.18.1",
     "@inpageedit/logger": "^0.1.0",
     "@inpageedit/modal": "workspace:^",
