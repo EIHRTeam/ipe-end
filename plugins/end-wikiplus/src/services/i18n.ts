@@ -32,6 +32,8 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': 'Current Draft',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.',
+    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
+      'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.',
     'Host-local plugin registry view': 'Host-local plugin registry view',
     enabled: 'enabled',
     disabled: 'disabled',
@@ -58,6 +60,8 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '現在の下書き',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '現在のホストページではまだ item id が解決されていません。編集した JSON に有効な識別子が含まれていれば保存できます。',
+    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
+      '旧 MediaWiki 編集オプションはレイアウト互換のため表示を残していますが、まだホスト submit API には送信されません。',
     'Host-local plugin registry view': 'ホスト内ローカルのプラグインレジストリ表示',
     enabled: '有効',
     disabled: '無効',
@@ -84,6 +88,8 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '当前草稿',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '当前宿主页面尚未解析出 item id。如果编辑后的 JSON 内包含有效条目标识，仍然可以正常保存。',
+    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
+      '旧版 MediaWiki 编辑选项仅为保持布局兼容而保留显示，当前不会发送到宿主 submit API。',
     'Host-local plugin registry view': '宿主本地插件注册表视图',
     enabled: '已启用',
     disabled: '已禁用',
@@ -110,6 +116,8 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '目前草稿',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '目前宿主頁面尚未解析出 item id。如果編輯後的 JSON 內含有效條目識別，仍然可以正常儲存。',
+    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
+      '舊版 MediaWiki 編輯選項僅為維持版面相容而保留顯示，目前不會送到宿主 submit API。',
     'Host-local plugin registry view': '宿主本地插件註冊表檢視',
     enabled: '已啟用',
     disabled: '已停用',

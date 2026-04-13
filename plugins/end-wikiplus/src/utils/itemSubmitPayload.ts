@@ -24,6 +24,107 @@ function cloneSubmitRecord(value: Record<string, unknown>) {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
 }
 
+function isEmptyRecord(value: unknown): value is Record<string, never> {
+  return isRecord(value) && !Object.keys(value).length
+}
+
+function removeEmptyArrayField(record: Record<string, unknown>, key: string) {
+  const value = record[key]
+  if (Array.isArray(value) && !value.length) {
+    delete record[key]
+  }
+}
+
+function removeEmptyRecordField(record: Record<string, unknown>, key: string) {
+  if (isEmptyRecord(record[key])) {
+    delete record[key]
+  }
+}
+
+function removeEmptyStringField(record: Record<string, unknown>, key: string) {
+  if (record[key] === '') {
+    delete record[key]
+  }
+}
+
+function removeNullField(record: Record<string, unknown>, key: string) {
+  if (record[key] === null) {
+    delete record[key]
+  }
+}
+
+function normalizeBriefForSubmit(item: Record<string, unknown>) {
+  const brief = isRecord(item.brief) ? item.brief : null
+  if (!brief) {
+    return
+  }
+
+  removeNullField(brief, 'associate')
+  removeNullField(brief, 'composite')
+
+  const description = isRecord(brief.description) ? brief.description : null
+  if (description && isEmptyRecord(description.authorMap)) {
+    delete description.authorMap
+  }
+}
+
+function normalizeExtraInfoForSubmit(item: Record<string, unknown>) {
+  const document = isRecord(item.document) ? item.document : null
+  const extraInfo = document && isRecord(document.extraInfo) ? document.extraInfo : null
+  if (!extraInfo) {
+    return
+  }
+
+  removeEmptyStringField(extraInfo, 'composite')
+  removeEmptyStringField(extraInfo, 'showType')
+}
+
+function normalizeWidgetCommonMapForSubmit(item: Record<string, unknown>) {
+  const document = isRecord(item.document) ? item.document : null
+  const widgetCommonMap =
+    document && isRecord(document.widgetCommonMap) ? document.widgetCommonMap : null
+  if (!widgetCommonMap) {
+    return
+  }
+
+  for (const widget of Object.values(widgetCommonMap)) {
+    if (!isRecord(widget)) {
+      continue
+    }
+
+    removeEmptyArrayField(widget, 'tableList')
+
+    if (widget.type === 'table') {
+      removeEmptyArrayField(widget, 'tabList')
+      removeEmptyRecordField(widget, 'tabDataMap')
+    }
+
+    const tabList = Array.isArray(widget.tabList) ? widget.tabList : null
+    if (tabList) {
+      for (const tab of tabList) {
+        if (!isRecord(tab)) {
+          continue
+        }
+        removeEmptyStringField(tab, 'icon')
+        removeEmptyStringField(tab, 'title')
+      }
+    }
+
+    const tabDataMap = isRecord(widget.tabDataMap) ? widget.tabDataMap : null
+    if (!tabDataMap) {
+      continue
+    }
+
+    for (const tabData of Object.values(tabDataMap)) {
+      if (!isRecord(tabData)) {
+        continue
+      }
+      removeNullField(tabData, 'intro')
+      removeEmptyStringField(tabData, 'content')
+    }
+  }
+}
+
 function normalizeItemForSubmit(item: Record<string, unknown>, clone = true) {
   const nextItem = clone ? cloneSubmitRecord(item) : item
 
@@ -37,6 +138,10 @@ function normalizeItemForSubmit(item: Record<string, unknown>, clone = true) {
     }
   }
 
+  normalizeBriefForSubmit(nextItem)
+  normalizeExtraInfoForSubmit(nextItem)
+  normalizeWidgetCommonMapForSubmit(nextItem)
+
   return nextItem
 }
 
@@ -45,12 +150,20 @@ function extractCommitMsg(value: Record<string, unknown>, fallbackCommitMsg: str
 }
 
 function extractFormalItem(value: Record<string, unknown>) {
-  if (isRecord(value.item)) {
-    return value.item
-  }
+  const nestedData = isRecord(value.data) ? value.data : null
+  const candidates = [
+    nestedData?.draft,
+    nestedData?.newest,
+    nestedData?.item,
+    value.draft,
+    value.newest,
+    value.item,
+  ]
 
-  if (isRecord(value.data) && isRecord(value.data.item)) {
-    return value.data.item
+  for (const candidate of candidates) {
+    if (isRecord(candidate)) {
+      return candidate
+    }
   }
 
   return value

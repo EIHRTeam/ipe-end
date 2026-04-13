@@ -17,12 +17,23 @@ export interface EndWikiBootstrapSnapshot {
 
 function extractItemPayload(value: unknown): Record<string, unknown> | null {
   if (!isRecord(value)) return null
-  if (isRecord(value.data) && isRecord(value.data.item)) {
-    return value.data.item
+
+  const nestedData = isRecord(value.data) ? value.data : null
+  const candidates = [
+    nestedData?.draft,
+    nestedData?.newest,
+    nestedData?.item,
+    value.draft,
+    value.newest,
+    value.item,
+  ]
+
+  for (const candidate of candidates) {
+    if (isRecord(candidate)) {
+      return candidate
+    }
   }
-  if (isRecord(value.item)) {
-    return value.item
-  }
+
   return value
 }
 

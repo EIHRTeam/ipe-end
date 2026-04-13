@@ -757,15 +757,26 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
                   value={action}
                   inputProps={{
                     checked: watchList === action,
+                    disabled: true,
                   }}
                 >
                   {$`watchlist.${action}`}
                 </RadioBox>
               ))}
             </div>
+            <p className="endwiki-ipe-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem' }}>
+              {$`Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.`}
+            </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <CheckBox name="minor" id="minor" checked={options.editMinor}>
+            <CheckBox
+              name="minor"
+              id="minor"
+              checked={options.editMinor}
+              inputProps={{
+                disabled: true,
+              }}
+            >
               {$`Minor edit`}
             </CheckBox>
             <CheckBox name="reloadAfterSave" id="reloadAfterSave" checked={options.reloadAfterSave}>

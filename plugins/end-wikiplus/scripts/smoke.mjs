@@ -24,6 +24,7 @@ globalThis.Event = window.Event
 globalThis.UIEvent = window.UIEvent
 globalThis.CustomEvent = window.CustomEvent
 globalThis.MutationObserver = window.MutationObserver
+globalThis.FormData = window.FormData
 globalThis.getComputedStyle = window.getComputedStyle.bind(window)
 globalThis.requestAnimationFrame = window.requestAnimationFrame.bind(window)
 globalThis.cancelAnimationFrame = window.cancelAnimationFrame.bind(window)
@@ -84,7 +85,204 @@ globalThis.IntersectionObserver = class {
 
 const listeners = new Map()
 const ok = (data) => ({ ok: true, data })
-const currentItem = { itemId: '1', name: 'Test', lang: 'zh_Hans' }
+function buildFormalItem(name) {
+  return {
+    itemId: '1',
+    name,
+    lang: 'zh_Hans',
+    status: 1,
+    createdUser: {
+      id: 'user-created',
+      nickname: 'Creator',
+    },
+    lastUpdatedUser: {
+      id: 'user-updated',
+      nickname: 'Editor',
+    },
+    lastAuditPassedAt: '1234567890',
+    mainType: {
+      id: 'main-type',
+      name: 'Main Type',
+    },
+    subType: {
+      id: 'sub-type',
+      name: 'Sub Type',
+    },
+    tagIds: ['tag-1'],
+    brief: {
+      name,
+      associate: null,
+      composite: null,
+      description: {
+        id: 'brief-doc',
+        blockIds: [],
+        blockMap: {},
+        authorMap: {},
+        version: '1.0.0',
+      },
+    },
+    document: {
+      extraInfo: {
+        illustration: '',
+        showType: '',
+        composite: '',
+      },
+      widgetCommonMap: {
+        audioWidget: {
+          type: 'audio',
+          tableList: [],
+          tabList: [],
+          tabDataMap: {
+            default: {
+              intro: null,
+              content: '',
+              audioList: [
+                {
+                  title: 'Theme',
+                  profile: 'Theme intro',
+                  resourceUrl: 'https://example.com/theme.mp3',
+                },
+              ],
+            },
+          },
+        },
+        imageTabs: {
+          type: 'common',
+          tableList: [],
+          tabList: [
+            {
+              tabId: 'tab-1',
+              title: '',
+              icon: 'https://example.com/icon.png',
+            },
+            {
+              tabId: 'tab-2',
+              title: 'Keep title',
+              icon: '',
+            },
+          ],
+          tabDataMap: {
+            default: {
+              intro: null,
+              content: 'doc-1',
+              audioList: [],
+            },
+            'tab-2': {
+              intro: {
+                name: 'Keep intro',
+              },
+              content: '',
+              audioList: [],
+            },
+          },
+        },
+        tableWidget: {
+          type: 'table',
+          tableList: [
+            {
+              label: 'A1',
+              value: 'A2',
+            },
+          ],
+          tabList: [],
+          tabDataMap: {},
+        },
+      },
+    },
+  }
+}
+
+function buildExpectedSubmitItem(name) {
+  return {
+    itemId: '1',
+    name,
+    lang: 'zh_Hans',
+    status: 0,
+    createdUser: null,
+    lastUpdatedUser: null,
+    lastAuditPassedAt: '1234567890',
+    mainType: {
+      id: 'main-type',
+      name: 'Main Type',
+    },
+    subType: {
+      id: 'sub-type',
+      name: 'Sub Type',
+    },
+    tagIds: ['tag-1'],
+    brief: {
+      name,
+      description: {
+        id: 'brief-doc',
+        blockIds: [],
+        blockMap: {},
+        version: '1.0.0',
+      },
+    },
+    document: {
+      extraInfo: {
+        illustration: '',
+      },
+      widgetCommonMap: {
+        audioWidget: {
+          type: 'audio',
+          tabList: [],
+          tabDataMap: {
+            default: {
+              audioList: [
+                {
+                  title: 'Theme',
+                  profile: 'Theme intro',
+                  resourceUrl: 'https://example.com/theme.mp3',
+                },
+              ],
+            },
+          },
+        },
+        imageTabs: {
+          type: 'common',
+          tabList: [
+            {
+              tabId: 'tab-1',
+              icon: 'https://example.com/icon.png',
+            },
+            {
+              tabId: 'tab-2',
+              title: 'Keep title',
+            },
+          ],
+          tabDataMap: {
+            default: {
+              content: 'doc-1',
+              audioList: [],
+            },
+            'tab-2': {
+              intro: {
+                name: 'Keep intro',
+              },
+              audioList: [],
+            },
+          },
+        },
+        tableWidget: {
+          type: 'table',
+          tableList: [
+            {
+              label: 'A1',
+              value: 'A2',
+            },
+          ],
+        },
+      },
+    },
+  }
+}
+
+const currentItem = buildFormalItem('Newest from host')
+const draftItem = buildFormalItem('Draft from host')
+const fetchUpdateInfoCalls = []
+const submitItemUpdateCalls = []
+const clearItemDraftCalls = []
 const selfPlugin = {
   id: 'inpageedit-next-end-wikiplus',
   name: 'InPageEdit NEXT for Endfield Wiki⁺',
@@ -115,17 +313,28 @@ const hostContext = {
     fetchCatalog: async () => ok({ items: [] }),
     fetchItem: async () => ok({ item: currentItem }),
     fetchMe: async () => ok({ item: null }),
-    fetchUpdateInfo: async () =>
-      ok({
-        item: currentItem,
-        revisionId: 1,
-        content: '{}',
-        contentModel: 'json',
+    fetchUpdateInfo: async (args) => {
+      fetchUpdateInfoCalls.push(args)
+      return ok({
+        code: 0,
+        message: 'OK',
         timestamp: 'now',
-        categories: [],
-      }),
-    submitItemUpdate: async () => ok({ revisionId: 2 }),
-    clearItemDraft: async () => ok(null),
+        data: {
+          newest: currentItem,
+          draft: draftItem,
+          templates: [],
+          associateList: [],
+        },
+      })
+    },
+    submitItemUpdate: async (args) => {
+      submitItemUpdateCalls.push(args)
+      return ok({ revisionId: 2 })
+    },
+    clearItemDraft: async (args) => {
+      clearItemDraftCalls.push(args)
+      return ok(null)
+    },
   },
   auth: {
     getSession: async () =>
@@ -221,14 +430,31 @@ async function main() {
   assert.ok(window.document.querySelector('input[name="summary"]'))
   assert.ok(window.document.body.textContent?.includes('Follow MW preferences'))
   assert.ok(!window.document.body.textContent?.includes('watchlist.preferences'))
+  assert.deepEqual(fetchUpdateInfoCalls, [{ itemId: '1', lang: 'zh_Hans' }])
+  const textarea = window.document.querySelector('textarea#wpTextbox1')
+  assert.ok(textarea)
+  assert.ok(textarea.value.includes('"name": "Draft from host"'))
+  assert.ok(textarea.value.includes('"status": 0'))
+  assert.ok(textarea.value.includes('"createdUser": null'))
+  assert.ok(!textarea.value.includes('"code":'))
+  assert.ok(!textarea.value.includes('"templates":'))
+  assert.ok(!textarea.value.includes('"associate": null'))
+  assert.ok(!textarea.value.includes('"authorMap": {}'))
+  assert.ok(!textarea.value.includes('"composite": ""'))
+  assert.ok(!textarea.value.includes('"intro": null'))
+  assert.ok(!textarea.value.includes('"tableList": []'))
+  assert.equal(window.document.querySelector('input[name="minor"]')?.hasAttribute('disabled'), true)
+  assert.equal(
+    window.document.querySelector('input[name="watchlist"]')?.hasAttribute('disabled'),
+    true
+  )
+  assert.ok(window.document.body.textContent?.includes('not sent by the host submit API yet'))
 
   const quickEditWindow =
     window.document.querySelector('.ipe-modal-modal__window.ipe-quickEdit') ||
     window.document.querySelector('.ipe-modal-modal__window')
   assert.ok(quickEditWindow)
 
-  const textarea = window.document.querySelector('textarea#wpTextbox1')
-  assert.ok(textarea)
   textarea.value = '{"itemId":"1","name":"Changed by smoke"}'
   textarea.dispatchEvent(new window.Event('input', { bubbles: true }))
 
@@ -249,12 +475,44 @@ async function main() {
   assert.ok(window.document.querySelector('.endwiki-ipe-json-diff'))
   assert.ok(window.document.body.textContent?.includes('Changed by smoke'))
 
+  textarea.value = JSON.stringify(
+    {
+      code: 0,
+      message: 'OK',
+      data: {
+        item: buildFormalItem('Changed by smoke'),
+      },
+    },
+    null,
+    2
+  )
+  textarea.dispatchEvent(new window.Event('input', { bubbles: true }))
+
+  const submitBtn = findModalButton(quickEditWindow, ['submit', '提交'])
+  assert.ok(submitBtn)
+  submitBtn.click()
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  assert.deepEqual(
+    submitItemUpdateCalls.map(({ itemJson, ...rest }) => ({
+      ...rest,
+      itemJson: JSON.parse(itemJson),
+    })),
+    [
+      {
+        itemJson: buildExpectedSubmitItem('Changed by smoke'),
+        commitMsg: '[IPE-NEXT] Quick edit',
+      },
+    ]
+  )
+  assert.deepEqual(clearItemDraftCalls, [{ itemId: '1', lang: 'zh_Hans' }])
+  assert.ok(window.document.body.textContent?.includes('Your changes have been saved.'))
+
   window.document.querySelector('#ipe-toolbox__preferences-btn')?.dispatchEvent(
     new window.MouseEvent('click', { bubbles: true }),
   )
   await new Promise((resolve) => setTimeout(resolve, 200))
 
-  assert.ok(window.document.querySelectorAll('.ipe-modal-modal.is-centered').length >= 2)
+  assert.ok(window.document.querySelectorAll('.ipe-modal-modal.is-centered').length >= 1)
   assert.ok(window.document.querySelector('#ipe-preferences-app'))
   assert.ok(window.document.body.textContent?.includes('General'))
   assert.ok(!window.document.body.textContent?.includes('prefs.general.label'))

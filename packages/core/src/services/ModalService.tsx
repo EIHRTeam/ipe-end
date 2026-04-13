@@ -1,4 +1,5 @@
 import { InPageEdit } from '@/InPageEdit'
+import { ProgressBar } from '@/components'
 import { IPEModal, IPEModalEvent, IPEModalOptions } from '@inpageedit/modal'
 import '@inpageedit/modal/style.css'
 
