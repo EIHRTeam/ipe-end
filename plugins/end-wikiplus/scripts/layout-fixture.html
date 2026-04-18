@@ -151,8 +151,6 @@
       const logger = { info() {}, warn(...args) { console.warn(...args) }, error(...args) { console.error(...args) }, debug() {} }
       window.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
       globalThis.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
-      window.process = window.process || { env: { NODE_ENV: 'production' } }
-      globalThis.process = globalThis.process || window.process
 
       const bundleUrl = new URL('../artifacts/inpageedit-next-end-wikiplus/dist/index.js', window.location.href)
       bundleUrl.searchParams.set('ts', Date.now().toString())

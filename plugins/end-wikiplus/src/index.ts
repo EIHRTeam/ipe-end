@@ -10,6 +10,7 @@ import { EndWikiQuickEditPlugin } from '@plugin/plugins/quick-edit'
 import { EndWikiQuickPreviewPlugin } from '@plugin/plugins/quick-preview'
 import { EndWikiPluginStorePlugin } from '@plugin/plugins/plugin-store'
 import { pluginRuntimeDebug } from '@plugin/utils/debug'
+import { installHostBottomInsetSync } from '@plugin/utils/hostBottomInset'
 
 const bootApp = async (host: HostPluginContext) => {
   pluginRuntimeDebug.info('boot', '开始启动 Endfield Wiki⁺ IPE 插件')
@@ -59,6 +60,7 @@ const bootApp = async (host: HostPluginContext) => {
   })
 
   document.body.setAttribute('data-end-wikiplus-ipe', 'active')
+  const disposeHostBottomInsetSync = installHostBottomInsetSync()
   pluginRuntimeDebug.debug('boot', '等待 toolbox service 可用')
   window.setTimeout(() => {
     pluginRuntimeDebug.debug('boot', 'toolbox 延时检查', {
@@ -112,15 +114,17 @@ const bootApp = async (host: HostPluginContext) => {
   return {
     app,
     bridge,
+    disposeHostBottomInsetSync,
   }
 }
 
 const moduleExport: HostPluginModule = {
   async activate(host) {
-    const { app, bridge } = await bootApp(host)
+    const { app, bridge, disposeHostBottomInsetSync } = await bootApp(host)
 
     return async () => {
       pluginRuntimeDebug.info('boot', '开始停用 Endfield Wiki⁺ IPE 插件')
+      disposeHostBottomInsetSync()
       await bridge.dispose()
       document.body.removeAttribute('data-end-wikiplus-ipe')
       await (app as any).dispose?.()

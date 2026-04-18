@@ -2,6 +2,15 @@
 
 body[data-end-wikiplus-ipe='active'] {
   --endwiki-ipe-border: color-mix(in srgb, var(--ipe-modal-border-color) 72%, transparent);
+  --endwiki-host-bottom-inset: 0px;
+  --ipe-modal-safe-area-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--endwiki-host-bottom-inset, 0px)
+  );
+}
+
+body[data-end-wikiplus-ipe='active'] #ipe-edit-toolbox {
+  bottom: calc(2em + var(--endwiki-host-bottom-inset, 0px));
 }
 
 .endwiki-ipe-badge {
@@ -253,7 +262,7 @@ body.endwiki-quickEditHostFullscreen
   padding:
     env(safe-area-inset-top, 0px)
     env(safe-area-inset-right, 0px)
-    env(safe-area-inset-bottom, 0px)
+    max(env(safe-area-inset-bottom, 0px), var(--endwiki-host-bottom-inset, 0px))
     env(safe-area-inset-left, 0px) !important;
 }
 
@@ -269,7 +278,7 @@ body.endwiki-quickEditHostFullscreen
 .endwiki-quickEdit__floatingExit {
   position: absolute;
   right: 1.25rem;
-  bottom: 1.25rem;
+  bottom: calc(1.25rem + var(--endwiki-host-bottom-inset, 0px));
   z-index: 5;
   width: 3.25rem;
   height: 3.25rem;

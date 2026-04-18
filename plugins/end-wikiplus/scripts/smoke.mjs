@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { JSDOM } from 'jsdom'
 
 const dom = new JSDOM('<!doctype html><html><head></head><body><div id="app"></div></body></html>', {
@@ -7,6 +9,7 @@ const dom = new JSDOM('<!doctype html><html><head></head><body><div id="app"></d
 })
 
 const { window } = dom
+const originalProcess = globalThis.process
 const originalError = console.error
 const consoleErrors = []
 
@@ -82,6 +85,16 @@ globalThis.IntersectionObserver = class {
   unobserve() {}
   disconnect() {}
 }
+
+const artifactEntryPath = fileURLToPath(
+  new URL('../artifacts/inpageedit-next-end-wikiplus/dist/index.js', import.meta.url),
+)
+const artifactEntrySource = readFileSync(artifactEntryPath, 'utf8')
+
+assert.ok(
+  !artifactEntrySource.includes('process.env.NODE_ENV'),
+  'bundle should not leak process.env.NODE_ENV into runtime code',
+)
 
 const listeners = new Map()
 const ok = (data) => ({ ok: true, data })
@@ -398,7 +411,24 @@ async function main() {
     `../artifacts/inpageedit-next-end-wikiplus/dist/index.js?ts=${Date.now()}`,
     import.meta.url,
   )
-  const mod = await import(artifactUrl.href)
+  const processDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'process')
+  Object.defineProperty(globalThis, 'process', {
+    value: undefined,
+    configurable: true,
+    writable: true,
+  })
+
+  let mod
+  try {
+    mod = await import(artifactUrl.href)
+  } finally {
+    if (processDescriptor) {
+      Object.defineProperty(globalThis, 'process', processDescriptor)
+    } else {
+      delete globalThis.process
+    }
+  }
+
   const cleanup = await mod.default.activate(hostContext)
   await new Promise((resolve) => setTimeout(resolve, 400))
 
@@ -548,7 +578,7 @@ async function main() {
 main()
   .catch((error) => {
     console.error(error)
-    process.exitCode = 1
+    originalProcess.exitCode = 1
   })
   .finally(() => {
     console.error = originalError

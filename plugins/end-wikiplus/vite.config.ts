@@ -8,6 +8,7 @@ const ROOT = resolve(import.meta.dirname)
 const OUT_ROOT = resolve(ROOT, 'artifacts/inpageedit-next-end-wikiplus')
 const OUT_ENTRY = resolve(OUT_ROOT, 'dist/index.js')
 const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as { version: string }
+const nodeEnv = process.env.NODE_ENV || 'production'
 
 export default defineConfig({
   plugins: [
@@ -79,7 +80,9 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.__VERSION__': JSON.stringify(pkg.version),
+    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
   },
+  mode: nodeEnv,
   build: {
     target: 'es2022',
     outDir: resolve(OUT_ROOT, 'dist'),
