@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "smoke:converter": "tsx ./scripts/converter-smoke.ts",
     "smoke": "pnpm build && node ./scripts/smoke.mjs",
     "package:zip": "node ./scripts/package-zip.mjs"
   },

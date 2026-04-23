@@ -7,6 +7,7 @@ export interface MonacoTextareaBridgeHandle {
   getValue(): string
   replaceText(startOffset: number, endOffset: number, nextText: string): void
   setValue(nextValue: string): void
+  setLanguage(nextLanguage: string): void
   syncTextarea(): void
   dispose(): void
   isReady(): boolean
@@ -134,7 +135,8 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
   let layoutTimerIds: number[] = []
 
   const initialValue = props.value ?? ''
-  const language = props.language || 'json'
+  let language = props.language || 'json'
+  let monacoApi: MonacoModule | null = null
   const defaultRootStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -269,6 +271,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     blurDisposable = null
     editorInstance?.dispose()
     editorInstance = null
+    monacoApi = null
     mutationObserver?.disconnect()
     mutationObserver = null
   }
@@ -317,6 +320,23 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         textareaRef.value = nextValue
       }
     },
+    setLanguage(nextLanguage: string) {
+      if (!nextLanguage || nextLanguage === language) {
+        return
+      }
+
+      language = nextLanguage
+      if (!editorInstance || !monacoApi) {
+        return
+      }
+
+      const model = editorInstance.getModel()
+      if (!model) {
+        return
+      }
+
+      monacoApi.editor.setModelLanguage(model, nextLanguage)
+    },
     syncTextarea,
     dispose,
     isReady() {
@@ -364,6 +384,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
 
       ensureMonacoEnvironment(runtime.editorWorker, runtime.jsonWorker)
       runtime.monaco.editor.setTheme(resolveMonacoTheme(props.themeMode))
+      monacoApi = runtime.monaco
 
       const styleTarget = surfaceRef || containerRef
       const computedStyle = styleTarget.ownerDocument.defaultView?.getComputedStyle(styleTarget)

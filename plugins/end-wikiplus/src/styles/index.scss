@@ -303,6 +303,47 @@ body.endwiki-quickEditHostFullscreen
   transform: translateY(0);
 }
 
+.endwiki-quickEdit__modeOptions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.endwiki-quickEdit__convertActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.endwiki-quickEdit__convertButton {
+  appearance: none;
+  border: 1px solid var(--endwiki-ipe-border, rgba(0, 0, 0, 0.12));
+  background: color-mix(in srgb, var(--ipe-modal-bg) 96%, #0f172a 4%);
+  color: var(--ipe-modal-text);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.endwiki-quickEdit__convertButton:hover:not(:disabled) {
+  border-color: var(--ipe-modal-primary-color, #2563eb);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.endwiki-quickEdit__convertButton:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.endwiki-quickEdit__convertButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .endwiki-monacoEditor {
   width: 100%;
   display: flex;

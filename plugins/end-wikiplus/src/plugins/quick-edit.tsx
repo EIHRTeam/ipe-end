@@ -20,6 +20,7 @@ import {
   type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
 import { prettyJson } from '@plugin/utils/result'
+import { convertEndfieldWikitextText } from '@plugin/utils/endfieldWikitextConverter'
 import {
   createSubmitPayload,
   getSubmitPayloadCommitMsg,
@@ -61,6 +62,7 @@ declare module '@/InPageEdit' {
 
 const BUILT_IN_FONT_OPTIONS = ['preferences', 'monospace', 'sans-serif', 'serif'] as const
 type EndWikiQuickEditPresentationMode = 'default' | 'window-fullscreen'
+type EndWikiQuickEditPayloadMode = 'json' | 'xml'
 const HOST_FULLSCREEN_CLASS = 'endwiki-quickEditHostFullscreen'
 
 type HostQuickEditRevision = {
@@ -345,6 +347,11 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     let presentationMode: EndWikiQuickEditPresentationMode = 'default'
     let floatingExitButton: HTMLButtonElement | null = null
     let windowFullscreenButton: HTMLButtonElement | null = null
+    let convertToJsonButtonRef: HTMLButtonElement | null = null
+    let convertToXmlButtonRef: HTMLButtonElement | null = null
+    let payloadModeJsonRadioRef: HTMLInputElement | null = null
+    let payloadModeXmlRadioRef: HTMLInputElement | null = null
+    let payloadMode: EndWikiQuickEditPayloadMode = 'json'
     let isSyncingCommitMsgFromEditor = false
     let isSyncingCommitMsgFromField = false
 
@@ -389,6 +396,10 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     }
 
     const syncCommitMsgFieldFromEditor = (editorValue = getEditorValue()) => {
+      if (payloadMode !== 'json') {
+        return
+      }
+
       if (isSyncingCommitMsgFromField) {
         return
       }
@@ -404,6 +415,10 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
     }
 
     const syncCommitMsgInEditor = (commitMsg: string) => {
+      if (payloadMode !== 'json') {
+        return
+      }
+
       if (isSyncingCommitMsgFromEditor) {
         return
       }
@@ -433,6 +448,51 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       } finally {
         isSyncingCommitMsgFromField = false
       }
+    }
+
+    const syncPayloadModeControls = () => {
+      if (payloadModeJsonRadioRef) {
+        payloadModeJsonRadioRef.checked = payloadMode === 'json'
+      }
+      if (payloadModeXmlRadioRef) {
+        payloadModeXmlRadioRef.checked = payloadMode === 'xml'
+      }
+      if (convertToJsonButtonRef) {
+        convertToJsonButtonRef.disabled = payloadMode === 'json'
+      }
+      if (convertToXmlButtonRef) {
+        convertToXmlButtonRef.disabled = payloadMode === 'xml'
+      }
+    }
+
+    const applyPayloadMode = (
+      nextMode: EndWikiQuickEditPayloadMode,
+      options: { syncSummaryFromJson?: boolean } = {}
+    ) => {
+      payloadMode = nextMode
+      editorBridge?.setLanguage(nextMode === 'xml' ? 'xml' : 'json')
+      syncPayloadModeControls()
+
+      if (nextMode === 'json' && options.syncSummaryFromJson !== false) {
+        syncCommitMsgFieldFromEditor(getEditorValue())
+      }
+    }
+
+    const convertEditorPayload = (
+      fromFormat: EndWikiQuickEditPayloadMode,
+      toFormat: EndWikiQuickEditPayloadMode
+    ) => {
+      const source = getEditorValue()
+      const converted = convertEndfieldWikitextText(source, fromFormat, toFormat)
+      setEditorValue(converted.text)
+      applyPayloadMode(toFormat, {
+        syncSummaryFromJson: true,
+      })
+
+      this.ctx.modal.notify('success', {
+        title: $`Payload Converted`,
+        content: $`Editor content has been converted with the Endfield Wiki format rules.`,
+      })
     }
 
     const getNumericCssValue = (value: string | null | undefined) => {
@@ -699,10 +759,13 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             themeMode={monacoTheme}
             value={editingContent}
             onChange={(value) => {
-              syncCommitMsgFieldFromEditor(value)
+              if (payloadMode === 'json') {
+                syncCommitMsgFieldFromEditor(value)
+              }
             }}
             onReady={(bridge) => {
               editorBridge = bridge
+              editorBridge.setLanguage(payloadMode === 'xml' ? 'xml' : 'json')
             }}
             onError={(error) => {
               this.logger.warn('Monaco editor initialization failed, fallback to textarea.', error)
@@ -726,6 +789,92 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             marginTop: '0',
           }}
         >
+          <div className="ipe-input-box">
+            <label htmlFor="payloadMode-json" style={{ display: 'block' }}>
+              {$`Payload mode`}
+            </label>
+            <div className="endwiki-quickEdit__modeOptions">
+              <RadioBox
+                name="payloadMode"
+                id="payloadMode-json"
+                value="json"
+                inputProps={{
+                  checked: true,
+                  ref: (el) => {
+                    payloadModeJsonRadioRef = el as HTMLInputElement
+                  },
+                  onChange: () => {
+                    applyPayloadMode('json')
+                  },
+                }}
+              >
+                {$`json模式`}
+              </RadioBox>
+              <RadioBox
+                name="payloadMode"
+                id="payloadMode-xml"
+                value="xml"
+                inputProps={{
+                  ref: (el) => {
+                    payloadModeXmlRadioRef = el as HTMLInputElement
+                  },
+                  onChange: () => {
+                    applyPayloadMode('xml', {
+                      syncSummaryFromJson: false,
+                    })
+                  },
+                }}
+              >
+                {$`xml模式`}
+              </RadioBox>
+            </div>
+            <p className="endwiki-ipe-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem' }}>
+              {$`In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.`}
+            </p>
+          </div>
+          <div className="ipe-input-box">
+            <label style={{ display: 'block' }}>{$`Format conversion`}</label>
+            <div className="endwiki-quickEdit__convertActions">
+              <button
+                type="button"
+                className="endwiki-quickEdit__convertButton"
+                ref={(el) => {
+                  convertToXmlButtonRef = el as HTMLButtonElement
+                }}
+                onClick={() => {
+                  try {
+                    convertEditorPayload('json', 'xml')
+                  } catch (error) {
+                    this.ctx.modal.notify('error', {
+                      title: $`Conversion Error`,
+                      content: error instanceof Error ? error.message : String(error),
+                    })
+                  }
+                }}
+              >
+                {$`转换到xml`}
+              </button>
+              <button
+                type="button"
+                className="endwiki-quickEdit__convertButton"
+                ref={(el) => {
+                  convertToJsonButtonRef = el as HTMLButtonElement
+                }}
+                onClick={() => {
+                  try {
+                    convertEditorPayload('xml', 'json')
+                  } catch (error) {
+                    this.ctx.modal.notify('error', {
+                      title: $`Conversion Error`,
+                      content: error instanceof Error ? error.message : String(error),
+                    })
+                  }
+                }}
+              >
+                {$`转换到json`}
+              </button>
+            </div>
+          </div>
           <InputBox
             label={$`Summary`}
             id="summary"
@@ -787,6 +936,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       </form>
     ) as HTMLFormElement
     modal.setContent(editForm)
+    syncPayloadModeControls()
     setupEditorLayoutSync()
     setupEditorPresentationControls()
 
@@ -816,9 +966,14 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           modal.setLoadingState(true)
 
           try {
+            let submitText = (formData.get('text') as string) || ''
+            if (payloadMode === 'xml') {
+              submitText = convertEndfieldWikitextText(submitText, 'xml', 'json').text
+            }
+
             await this.handleSubmit({
               wikiPage,
-              text: formData.get('text') as string,
+              text: submitText,
               summary: formData.get('summary') as string,
               minor: formData.get('minor') === 'on',
               watchlist: watchList,
