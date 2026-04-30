@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "org.eihrteam.ipe",
   "name": "InPageEdit NEXT for Endfield Wiki⁺",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Endfield Wiki⁺ host-first InPageEdit plugin package.",
   "entry": "dist/index.js",
   "styles": ["dist/styles.css"],

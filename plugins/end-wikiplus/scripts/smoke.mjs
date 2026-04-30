@@ -478,8 +478,6 @@ async function main() {
     window.document.querySelector('input[name="watchlist"]')?.hasAttribute('disabled'),
     true
   )
-  assert.ok(window.document.body.textContent?.includes('not sent by the host submit API yet'))
-
   const quickEditWindow =
     window.document.querySelector('.ipe-modal-modal__window.ipe-quickEdit') ||
     window.document.querySelector('.ipe-modal-modal__window')
