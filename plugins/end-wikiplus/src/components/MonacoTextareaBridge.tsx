@@ -52,9 +52,10 @@ function loadMonacoRuntime() {
     monacoRuntimePromise = Promise.all([
       import('monaco-editor/esm/vs/editor/editor.api'),
       import('monaco-editor/esm/vs/language/json/monaco.contribution'),
+      import('monaco-editor/esm/vs/basic-languages/xml/xml.contribution'),
       import('monaco-editor/esm/vs/editor/editor.worker?worker&inline'),
       import('monaco-editor/esm/vs/language/json/json.worker?worker&inline'),
-    ]).then(([monaco, _jsonContribution, editorWorker, jsonWorker]) => ({
+    ]).then(([monaco, _jsonContribution, _xmlContribution, editorWorker, jsonWorker]) => ({
       monaco,
       editorWorker: editorWorker.default as WorkerCtor,
       jsonWorker: jsonWorker.default as WorkerCtor,

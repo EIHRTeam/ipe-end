@@ -32,13 +32,9 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': 'Current Draft',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.',
-    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
-      'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.',
     'Payload mode': 'Payload mode',
     'json模式': 'JSON mode',
     'xml模式': 'XML mode',
-    'In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.':
-      'In JSON mode, submit sends JSON directly. In XML mode, submit converts XML to JSON first.',
     'Format conversion': 'Format conversion',
     '转换到xml': 'Convert to XML',
     '转换到json': 'Convert to JSON',
@@ -72,13 +68,9 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '現在の下書き',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '現在のホストページではまだ item id が解決されていません。編集した JSON に有効な識別子が含まれていれば保存できます。',
-    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
-      '旧 MediaWiki 編集オプションはレイアウト互換のため表示を残していますが、まだホスト submit API には送信されません。',
     'Payload mode': '入力モード',
     'json模式': 'JSON モード',
     'xml模式': 'XML モード',
-    'In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.':
-      'JSON モードではそのまま送信し、XML モードでは送信前に XML を JSON へ変換します。',
     'Format conversion': '形式変換',
     '转换到xml': 'XML に変換',
     '转换到json': 'JSON に変換',
@@ -112,13 +104,9 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '当前草稿',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '当前宿主页面尚未解析出 item id。如果编辑后的 JSON 内包含有效条目标识，仍然可以正常保存。',
-    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
-      '旧版 MediaWiki 编辑选项仅为保持布局兼容而保留显示，当前不会发送到宿主 submit API。',
     'Payload mode': '内容模式',
     'json模式': 'json模式',
     'xml模式': 'xml模式',
-    'In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.':
-      '在 json模式 下点击提交会直接提交 JSON；在 xml模式 下会先把 XML 转成 JSON 再提交。',
     'Format conversion': '格式转换',
     '转换到xml': '转换到xml',
     '转换到json': '转换到json',
@@ -152,13 +140,9 @@ const ADAPTER_LANGUAGE_DATA = {
     'Current Draft': '目前草稿',
     'The current host page has not resolved an item id yet. Saving still works if the edited JSON contains a valid item identifier.':
       '目前宿主頁面尚未解析出 item id。如果編輯後的 JSON 內含有效條目識別，仍然可以正常儲存。',
-    'Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.':
-      '舊版 MediaWiki 編輯選項僅為維持版面相容而保留顯示，目前不會送到宿主 submit API。',
     'Payload mode': '內容模式',
     'json模式': 'json模式',
     'xml模式': 'xml模式',
-    'In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.':
-      '在 json模式 下點擊提交會直接提交 JSON；在 xml模式 下會先把 XML 轉成 JSON 再提交。',
     'Format conversion': '格式轉換',
     '转换到xml': '轉換到xml',
     '转换到json': '轉換到json',

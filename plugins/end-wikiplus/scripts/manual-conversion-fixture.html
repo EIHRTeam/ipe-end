@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quick Edit Manual Conversion Fixture</title>
+    <link rel="stylesheet" href="../artifacts/inpageedit-next-end-wikiplus/dist/styles.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        background: #f3f4f6;
+      }
+
+      #fixture-status {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 999999;
+        max-width: min(42rem, calc(100vw - 16px));
+        max-height: min(40vh, calc(100vh - 16px));
+        overflow: auto;
+        margin: 0;
+        padding: 12px;
+        border-radius: 8px;
+        background: rgba(17, 24, 39, 0.92);
+        color: #e5e7eb;
+        font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      const statusNode = document.createElement('pre')
+      statusNode.id = 'fixture-status'
+      statusNode.textContent = 'booting'
+      document.body.append(statusNode)
+
+      const setStatus = (value) => {
+        statusNode.textContent = JSON.stringify(value, null, 2)
+      }
+
+      window.addEventListener('error', (event) => {
+        document.body.dataset.error = 'true'
+        setStatus({
+          type: 'error',
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+        })
+      })
+
+      window.addEventListener('unhandledrejection', (event) => {
+        document.body.dataset.error = 'true'
+        setStatus({
+          type: 'unhandledrejection',
+          message: String(event.reason?.stack || event.reason),
+        })
+      })
+
+      const ok = (data) => ({ ok: true, data })
+      const listeners = new Map()
+      const fixtureState = {
+        notifications: [],
+        submitItemUpdateCalls: [],
+        clearItemDraftCalls: [],
+      }
+      window.__ENDWIKI_FIXTURE__ = fixtureState
+
+      const sampleJsonUrl = new URL('/ArknightsEndfieldWikitext/tests/data/sample.json', window.location.origin)
+      const sampleJsonText = await fetch(sampleJsonUrl.href).then((response) => response.text())
+      const samplePayload = JSON.parse(sampleJsonText)
+      const currentItem = {
+        itemId: samplePayload.item.itemId,
+        name: samplePayload.item.brief.name,
+        lang: 'zh_Hans',
+        status: 1,
+        createdUser: null,
+        lastUpdatedUser: null,
+        lastAuditPassedAt: '0',
+        mainType: {
+          id: 'fixture-main-type',
+          name: 'Fixture Main Type',
+        },
+        subType: {
+          id: 'fixture-sub-type',
+          name: 'Fixture Sub Type',
+        },
+        tagIds: [],
+        brief: samplePayload.item.brief,
+        document: samplePayload.item.document,
+      }
+      const selfPlugin = {
+        id: 'inpageedit-next-end-wikiplus',
+        name: 'InPageEdit NEXT for Endfield Wiki+',
+        version: '0.1.0',
+        enabled: true,
+        pages: ['wiki-renderer'],
+      }
+
+      const hostContext = {
+        host: {
+          getInfo: async () => ok({ apiVersion: 1, appVersion: 'dev', platform: 'desktop-web' }),
+        },
+        page: {
+          getContext: async () =>
+            ok({
+              kind: 'wiki-renderer',
+              routeName: 'wiki-render',
+              fullPath: '/wiki-renderer/sample',
+              params: {},
+              query: {},
+              wikiItemId: currentItem.itemId,
+              wikiItemName: currentItem.name,
+              hasWikiItem: true,
+            }),
+        },
+        wiki: {
+          getCurrentItem: async () => ok(currentItem),
+          fetchCatalog: async () => ok({ items: [] }),
+          fetchItem: async () => ok({ item: currentItem }),
+          fetchMe: async () => ok({ item: null }),
+          fetchUpdateInfo: async () =>
+            ok({
+              item: currentItem,
+              revisionId: 1,
+              content: sampleJsonText,
+              contentModel: 'json',
+              timestamp: 'now',
+              categories: [],
+            }),
+          submitItemUpdate: async (payload) => {
+            fixtureState.submitItemUpdateCalls.push(payload)
+            return ok({ revisionId: 2 })
+          },
+          clearItemDraft: async (payload) => {
+            fixtureState.clearItemDraftCalls.push(payload)
+            return ok(null)
+          },
+        },
+        auth: {
+          getSession: async () =>
+            ok({
+              hasSession: true,
+              credentialSource: 'fixture',
+              wikiProfileNickname: 'Fixture',
+              wikiProfileAvatar: '',
+              wikiProfileUserId: 'fixture-user',
+            }),
+        },
+        storage: {
+          getItem: async () => ok(null),
+          setItem: async () => ok(null),
+          removeItem: async () => ok(null),
+          listKeys: async () => ok([]),
+        },
+        ui: {
+          notify: async (payload) => {
+            fixtureState.notifications.push(payload)
+            return ok(null)
+          },
+        },
+        plugins: {
+          getSelf: async () => ok(selfPlugin),
+          getLoaded: async () => ok([selfPlugin]),
+        },
+        events: {
+          on: async (event, handler) => {
+            const handlers = listeners.get(event) || new Set()
+            handlers.add(handler)
+            listeners.set(event, handlers)
+            return ok(() => handlers.delete(handler))
+          },
+          emit: async (event, payload) => {
+            const handlers = listeners.get(event)
+            if (handlers) {
+              for (const handler of handlers) {
+                await handler(payload)
+              }
+            }
+            return ok({ pluginId: selfPlugin.id, event, payload })
+          },
+        },
+      }
+
+      const logger = {
+        info() {},
+        warn(...args) {
+          console.warn(...args)
+        },
+        error(...args) {
+          console.error(...args)
+        },
+        debug() {},
+      }
+      window.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
+      globalThis.__END_WIKIPLUS_PLUGIN_LOGGER__ = logger
+
+      const bundleUrl = new URL('../artifacts/inpageedit-next-end-wikiplus/dist/index.js', window.location.href)
+      bundleUrl.searchParams.set('ts', Date.now().toString())
+      const mod = await import(bundleUrl.href)
+      await mod.default.activate(hostContext)
+
+      for (let i = 0; i < 60; i += 1) {
+        const button = document.querySelector('#ipe-toolbox__quick-edit-btn')
+        if (button) {
+          button.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+          break
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      }
+
+      let isReady = false
+      for (let i = 0; i < 120; i += 1) {
+        const modal = document.querySelector('.ipe-modal-modal__window.ipe-quickEdit')
+        const editorBridge = document.querySelector('.endwiki-monacoEditor')
+        if (modal && editorBridge?.getAttribute('data-editor-mode') === 'monaco') {
+          document.body.dataset.ready = 'true'
+          setStatus({
+            ready: true,
+            itemId: currentItem.itemId,
+            name: currentItem.name,
+            editorMode: editorBridge.getAttribute('data-editor-mode'),
+          })
+          isReady = true
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+
+      if (!isReady) {
+        document.body.dataset.ready = 'timeout'
+        setStatus({
+          ready: false,
+          editorMode: document.querySelector('.endwiki-monacoEditor')?.getAttribute('data-editor-mode') || null,
+        })
+      }
+    </script>
+  </body>
+</html>

@@ -828,9 +828,6 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
                 {$`xml模式`}
               </RadioBox>
             </div>
-            <p className="endwiki-ipe-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem' }}>
-              {$`In json模式, submit sends JSON directly. In xml模式, submit converts XML to JSON first.`}
-            </p>
           </div>
           <div className="ipe-input-box">
             <label style={{ display: 'block' }}>{$`Format conversion`}</label>
@@ -913,9 +910,6 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
                 </RadioBox>
               ))}
             </div>
-            <p className="endwiki-ipe-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem' }}>
-              {$`Legacy MediaWiki edit flags stay visible for layout compatibility and are not sent by the host submit API yet.`}
-            </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <CheckBox

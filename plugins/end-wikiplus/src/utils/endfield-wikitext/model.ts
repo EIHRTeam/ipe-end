@@ -482,19 +482,10 @@ export function validateComplexTableBlock(block: ComplexTableBlock) {
   }
 
   for (const cell of block.cells) {
-    const maxWidth = block.columnWidths
-      .slice(cell.columnIndex, cell.columnIndex + cell.colSpan)
-      .reduce((total, width) => total + width, 0)
-
     for (const image of iterImageBlocks(cell.blocks)) {
       const imageWidth = Number.parseFloat(image.width)
       if (!Number.isFinite(imageWidth)) {
         throw new EndfieldWikitextConversionError(`Image width '${image.width}' is not numeric.`)
-      }
-      if (imageWidth > maxWidth + 1e-9) {
-        throw new EndfieldWikitextConversionError(
-          `Image width ${imageWidth} exceeds the available table cell width ${maxWidth}.`
-        )
       }
     }
   }
