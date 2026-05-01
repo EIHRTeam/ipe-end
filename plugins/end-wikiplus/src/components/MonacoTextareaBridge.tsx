@@ -1,9 +1,12 @@
+import type { Ace } from 'ace-builds'
 import type {
   IDisposable,
   editor as MonacoEditor,
 } from 'monaco-editor/esm/vs/editor/editor.api'
 
-export interface MonacoTextareaBridgeHandle {
+export type CodeEditorEngine = 'monaco' | 'ace'
+
+export interface CodeEditorTextareaBridgeHandle {
   getValue(): string
   replaceText(startOffset: number, endOffset: number, nextText: string): void
   setValue(nextValue: string): void
@@ -13,21 +16,26 @@ export interface MonacoTextareaBridgeHandle {
   isReady(): boolean
 }
 
+export type MonacoTextareaBridgeHandle = CodeEditorTextareaBridgeHandle
+
 export type MonacoThemeMode = 'auto' | 'light' | 'dark'
 
-export interface MonacoTextareaBridgeProps {
+export interface CodeEditorTextareaBridgeProps {
+  editorEngine?: CodeEditorEngine
   id?: string
   language?: string
   name: string
   onChange?: (value: string) => void
   onError?: (error: unknown) => void
-  onReady?: (handle: MonacoTextareaBridgeHandle) => void
+  onReady?: (handle: CodeEditorTextareaBridgeHandle) => void
   spellcheck?: boolean
   textareaClassName?: string
   textareaStyle?: Record<string, string>
   themeMode?: MonacoThemeMode
   value?: string
 }
+
+export type MonacoTextareaBridgeProps = CodeEditorTextareaBridgeProps
 
 type MonacoGlobal = typeof globalThis & {
   MonacoEnvironment?: {
@@ -45,7 +53,16 @@ interface MonacoRuntime {
   jsonWorker: WorkerCtor
 }
 
+type AceModule = typeof import('ace-builds')
+
+interface AceRuntime {
+  ace: AceModule
+}
+
+type EditorMode = 'loading' | CodeEditorEngine | 'textarea'
+
 let monacoRuntimePromise: Promise<MonacoRuntime> | null = null
+let aceRuntimePromise: Promise<AceRuntime> | null = null
 
 function loadMonacoRuntime() {
   if (!monacoRuntimePromise) {
@@ -63,6 +80,22 @@ function loadMonacoRuntime() {
   }
 
   return monacoRuntimePromise
+}
+
+function loadAceRuntime() {
+  if (!aceRuntimePromise) {
+    aceRuntimePromise = (async () => {
+      const aceModule = await import('ace-builds')
+      const ace = ((aceModule as { default?: AceModule }).default || aceModule) as AceModule
+      await import('ace-builds/src-noconflict/mode-json')
+      await import('ace-builds/src-noconflict/mode-xml')
+      await import('ace-builds/src-noconflict/theme-textmate')
+      await import('ace-builds/src-noconflict/theme-tomorrow_night')
+      return { ace }
+    })()
+  }
+
+  return aceRuntimePromise
 }
 
 function ensureMonacoEnvironment(editorWorker: WorkerCtor, jsonWorker: WorkerCtor) {
@@ -105,22 +138,34 @@ function resolveMonacoTheme(themeMode: MonacoThemeMode | undefined): 'vs' | 'vs-
     return 'vs'
   }
 
+  return isDarkTheme() ? 'vs-dark' : 'vs'
+}
+
+function resolveAceTheme(): 'ace/theme/textmate' | 'ace/theme/tomorrow_night' {
+  return isDarkTheme() ? 'ace/theme/tomorrow_night' : 'ace/theme/textmate'
+}
+
+function isDarkTheme() {
   const ipeTheme = document.body?.getAttribute('data-ipe-theme')
   if (ipeTheme === 'dark') {
-    return 'vs-dark'
+    return true
   }
   if (ipeTheme === 'light') {
-    return 'vs'
+    return false
   }
 
   if (typeof matchMedia === 'function') {
-    return matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs'
+    return matchMedia('(prefers-color-scheme: dark)').matches
   }
 
-  return 'vs'
+  return false
 }
 
-export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
+function resolveAceMode(nextLanguage: string) {
+  return nextLanguage === 'xml' ? 'ace/mode/xml' : 'ace/mode/json'
+}
+
+export function CodeEditorTextareaBridge(props: CodeEditorTextareaBridgeProps) {
   let rootRef: HTMLDivElement | null = null
   let surfaceRef: HTMLDivElement | null = null
   let containerRef: HTMLDivElement | null = null
@@ -131,11 +176,15 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
   let mutationObserver: MutationObserver | null = null
   let modelDisposable: IDisposable | null = null
   let blurDisposable: IDisposable | null = null
-  let editorInstance: MonacoEditor.IStandaloneCodeEditor | null = null
+  let monacoEditorInstance: MonacoEditor.IStandaloneCodeEditor | null = null
+  let aceEditorInstance: Ace.Editor | null = null
+  let aceChangeListener: Ace.EditorEvents['change'] | null = null
+  let aceBlurListener: Ace.EditorEvents['blur'] | null = null
   let layoutFrameIds: number[] = []
   let layoutTimerIds: number[] = []
 
   const initialValue = props.value ?? ''
+  const editorEngine: CodeEditorEngine = props.editorEngine || 'monaco'
   let language = props.language || 'json'
   let monacoApi: MonacoModule | null = null
   const defaultRootStyle = {
@@ -176,14 +225,17 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
   }
 
   const runLayout = () => {
-    if (!editorInstance || !containerRef) {
+    if (!containerRef) {
       return
     }
     const { width, height } = getLayoutSize()
     if (!width || !height) {
       return
     }
-    editorInstance.layout({ width, height })
+    if (monacoEditorInstance) {
+      monacoEditorInstance.layout({ width, height })
+    }
+    aceEditorInstance?.resize(true)
   }
 
   const scheduleLayout = (delay = 0) => {
@@ -245,15 +297,25 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     }
   }
 
+  const getEditorValue = () => {
+    if (monacoEditorInstance) {
+      return monacoEditorInstance.getValue()
+    }
+    if (aceEditorInstance) {
+      return aceEditorInstance.getValue()
+    }
+    return textareaRef?.value || ''
+  }
+
   const syncTextarea = () => {
     if (!textareaRef) {
       return
     }
-    textareaRef.value = editorInstance ? editorInstance.getValue() : textareaRef.value
+    textareaRef.value = getEditorValue()
   }
 
   const emitChange = () => {
-    props.onChange?.(editorInstance ? editorInstance.getValue() : textareaRef?.value || '')
+    props.onChange?.(getEditorValue())
   }
 
   const dispose = () => {
@@ -270,27 +332,37 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     modelDisposable = null
     blurDisposable?.dispose()
     blurDisposable = null
-    editorInstance?.dispose()
-    editorInstance = null
+    monacoEditorInstance?.dispose()
+    monacoEditorInstance = null
     monacoApi = null
+    if (aceEditorInstance) {
+      if (aceChangeListener) {
+        aceEditorInstance.off('change', aceChangeListener)
+        aceChangeListener = null
+      }
+      if (aceBlurListener) {
+        aceEditorInstance.off('blur', aceBlurListener)
+        aceBlurListener = null
+      }
+      aceEditorInstance.destroy()
+      aceEditorInstance.container?.remove()
+      aceEditorInstance = null
+    }
     mutationObserver?.disconnect()
     mutationObserver = null
   }
 
-  const handle: MonacoTextareaBridgeHandle = {
+  const handle: CodeEditorTextareaBridgeHandle = {
     getValue() {
-      if (editorInstance) {
-        return editorInstance.getValue()
-      }
-      return textareaRef?.value || ''
+      return getEditorValue()
     },
     replaceText(startOffset: number, endOffset: number, nextText: string) {
-      if (editorInstance) {
-        const model = editorInstance.getModel()
+      if (monacoEditorInstance) {
+        const model = monacoEditorInstance.getModel()
         if (model) {
           const start = model.getPositionAt(startOffset)
           const end = model.getPositionAt(endOffset)
-          editorInstance.executeEdits('endwiki-summary-sync', [
+          monacoEditorInstance.executeEdits('endwiki-summary-sync', [
             {
               range: {
                 startLineNumber: start.lineNumber,
@@ -306,6 +378,17 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         }
       }
 
+      if (aceEditorInstance) {
+        const session = aceEditorInstance.getSession()
+        const documentRef = session.getDocument()
+        const range = {
+          start: documentRef.indexToPosition(startOffset),
+          end: documentRef.indexToPosition(endOffset),
+        }
+        session.replace(range, nextText)
+        return
+      }
+
       if (textareaRef) {
         const currentValue = textareaRef.value
         textareaRef.value =
@@ -314,8 +397,11 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
       }
     },
     setValue(nextValue: string) {
-      if (editorInstance && editorInstance.getValue() !== nextValue) {
-        editorInstance.setValue(nextValue)
+      if (monacoEditorInstance && monacoEditorInstance.getValue() !== nextValue) {
+        monacoEditorInstance.setValue(nextValue)
+      }
+      if (aceEditorInstance && aceEditorInstance.getValue() !== nextValue) {
+        aceEditorInstance.setValue(nextValue, -1)
       }
       if (textareaRef) {
         textareaRef.value = nextValue
@@ -327,25 +413,24 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
       }
 
       language = nextLanguage
-      if (!editorInstance || !monacoApi) {
-        return
+      if (monacoEditorInstance && monacoApi) {
+        const model = monacoEditorInstance.getModel()
+        if (model) {
+          monacoApi.editor.setModelLanguage(model, nextLanguage)
+        }
       }
-
-      const model = editorInstance.getModel()
-      if (!model) {
-        return
+      if (aceEditorInstance) {
+        aceEditorInstance.getSession().setMode(resolveAceMode(nextLanguage))
       }
-
-      monacoApi.editor.setModelLanguage(model, nextLanguage)
     },
     syncTextarea,
     dispose,
     isReady() {
-      return Boolean(editorInstance)
+      return Boolean(monacoEditorInstance || aceEditorInstance)
     },
   }
 
-  const setMode = (mode: 'loading' | 'monaco' | 'textarea') => {
+  const setMode = (mode: EditorMode) => {
     if (!rootRef) {
       return
     }
@@ -361,6 +446,92 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     props.onError?.(error)
   }
 
+  const getEditorTypography = () => {
+    const styleTarget = surfaceRef || containerRef
+    const computedStyle = styleTarget?.ownerDocument.defaultView?.getComputedStyle(styleTarget)
+    const fontSize = Number.parseFloat(computedStyle?.fontSize || '')
+    const lineHeight = Number.parseFloat(computedStyle?.lineHeight || '')
+
+    return {
+      fontFamily: computedStyle?.fontFamily || props.textareaStyle?.fontFamily || undefined,
+      fontSize: Number.isFinite(fontSize) ? fontSize : 13,
+      lineHeight: Number.isFinite(lineHeight) ? lineHeight : undefined,
+    }
+  }
+
+  const mountMonacoEditor = async (token: number) => {
+    if (typeof Worker === 'undefined') {
+      throw new Error('Worker is not available in current runtime')
+    }
+
+    const runtime = await loadMonacoRuntime()
+    if (token !== mountToken || !containerRef || !textareaRef) {
+      return
+    }
+
+    ensureMonacoEnvironment(runtime.editorWorker, runtime.jsonWorker)
+    runtime.monaco.editor.setTheme(resolveMonacoTheme(props.themeMode))
+    monacoApi = runtime.monaco
+
+    const typography = getEditorTypography()
+    monacoEditorInstance = runtime.monaco.editor.create(containerRef, {
+      value: textareaRef.value,
+      language,
+      automaticLayout: true,
+      minimap: { enabled: false },
+      wordWrap: 'on',
+      scrollBeyondLastLine: false,
+      tabSize: 2,
+      insertSpaces: true,
+      fontFamily: typography.fontFamily,
+      fontSize: typography.fontSize,
+      lineHeight: typography.lineHeight,
+    })
+
+    modelDisposable = monacoEditorInstance.onDidChangeModelContent(() => {
+      syncTextarea()
+      emitChange()
+    })
+
+    blurDisposable = monacoEditorInstance.onDidBlurEditorText(() => {
+      syncTextarea()
+    })
+  }
+
+  const mountAceEditor = async (token: number) => {
+    const runtime = await loadAceRuntime()
+    if (token !== mountToken || !containerRef || !textareaRef) {
+      return
+    }
+
+    const typography = getEditorTypography()
+    aceEditorInstance = runtime.ace.edit(containerRef, {
+      value: textareaRef.value,
+      mode: resolveAceMode(language),
+      theme: resolveAceTheme(),
+      useWorker: false,
+      wrap: true,
+      tabSize: 2,
+      useSoftTabs: true,
+      showPrintMargin: false,
+      fontFamily: typography.fontFamily,
+      fontSize: typography.fontSize,
+      scrollPastEnd: 0,
+    })
+    aceEditorInstance.renderer.setScrollMargin(0, 0)
+    aceEditorInstance.renderer.setPadding(8)
+
+    aceChangeListener = () => {
+      syncTextarea()
+      emitChange()
+    }
+    aceBlurListener = () => {
+      syncTextarea()
+    }
+    aceEditorInstance.on('change', aceChangeListener)
+    aceEditorInstance.on('blur', aceBlurListener)
+  }
+
   const mountEditor = async () => {
     if (mounted || !containerRef || !textareaRef) {
       return
@@ -369,53 +540,22 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
     const currentToken = ++mountToken
 
     try {
-      if (typeof Worker === 'undefined') {
-        throw new Error('Worker is not available in current runtime')
-      }
-
-      const runtime = await loadMonacoRuntime()
-      if (currentToken !== mountToken || !containerRef || !textareaRef) {
-        return
-      }
-
       await waitForContainerVisibility(currentToken)
       if (currentToken !== mountToken || !containerRef || !textareaRef) {
         return
       }
 
-      ensureMonacoEnvironment(runtime.editorWorker, runtime.jsonWorker)
-      runtime.monaco.editor.setTheme(resolveMonacoTheme(props.themeMode))
-      monacoApi = runtime.monaco
+      if (editorEngine === 'ace') {
+        await mountAceEditor(currentToken)
+      } else {
+        await mountMonacoEditor(currentToken)
+      }
 
-      const styleTarget = surfaceRef || containerRef
-      const computedStyle = styleTarget.ownerDocument.defaultView?.getComputedStyle(styleTarget)
-      const fontSize = Number.parseFloat(computedStyle?.fontSize || '')
-      const lineHeight = Number.parseFloat(computedStyle?.lineHeight || '')
+      if (currentToken !== mountToken) {
+        return
+      }
 
-      editorInstance = runtime.monaco.editor.create(containerRef, {
-        value: textareaRef.value,
-        language,
-        automaticLayout: true,
-        minimap: { enabled: false },
-        wordWrap: 'on',
-        scrollBeyondLastLine: false,
-        tabSize: 2,
-        insertSpaces: true,
-        fontFamily: computedStyle?.fontFamily || props.textareaStyle?.fontFamily || undefined,
-        fontSize: Number.isFinite(fontSize) ? fontSize : 13,
-        lineHeight: Number.isFinite(lineHeight) ? lineHeight : undefined,
-      })
-
-      modelDisposable = editorInstance.onDidChangeModelContent(() => {
-        syncTextarea()
-        emitChange()
-      })
-
-      blurDisposable = editorInstance.onDidBlurEditorText(() => {
-        syncTextarea()
-      })
-
-      setMode('monaco')
+      setMode(editorEngine)
       syncTextarea()
       scheduleLayoutPasses()
       props.onReady?.(handle)
@@ -449,7 +589,8 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
         watchDisconnect(rootRef)
       }}
       style={defaultRootStyle}
-      className="endwiki-monacoEditor"
+      className="endwiki-codeEditor endwiki-monacoEditor"
+      data-editor-engine={editorEngine}
       data-editor-mode="loading"
     >
       <div
@@ -458,7 +599,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
           applyInlineStyle(surfaceRef, props.textareaStyle)
         }}
         style={defaultEditorSizeStyle}
-        className={`endwiki-monacoEditor__surface ${props.textareaClassName || ''}`}
+        className={`endwiki-codeEditor__surface endwiki-monacoEditor__surface ${props.textareaClassName || ''}`}
       >
         <div
           ref={(el) => {
@@ -468,7 +609,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
             })
           }}
           style={defaultEditorSizeStyle}
-          className="endwiki-monacoEditor__container"
+          className="endwiki-codeEditor__container endwiki-monacoEditor__container"
         ></div>
         <textarea
           ref={(el) => {
@@ -481,7 +622,7 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
           onInput={() => {
             emitChange()
           }}
-          className={`endwiki-monacoEditor__compatTextarea ${props.textareaClassName || ''}`}
+          className={`endwiki-codeEditor__compatTextarea endwiki-monacoEditor__compatTextarea ${props.textareaClassName || ''}`}
           style={defaultTextareaStyle}
           name={props.name}
           id={props.id}
@@ -492,4 +633,8 @@ export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
       </div>
     </div>
   ) as HTMLElement
+}
+
+export function MonacoTextareaBridge(props: MonacoTextareaBridgeProps) {
+  return <CodeEditorTextareaBridge {...props} editorEngine={props.editorEngine || 'monaco'} />
 }

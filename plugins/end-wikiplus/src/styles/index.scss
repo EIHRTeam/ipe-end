@@ -185,7 +185,7 @@ body[data-end-wikiplus-ipe='active'] #ipe-edit-toolbox {
   overflow: hidden;
 }
 
-.ipe-modal-modal__window.ipe-quickEdit .ipe-quickEdit__content > .endwiki-monacoEditor {
+.ipe-modal-modal__window.ipe-quickEdit .ipe-quickEdit__content > .endwiki-codeEditor {
   flex: 1 1 auto !important;
   height: 100% !important;
   min-height: 0 !important;
@@ -268,9 +268,9 @@ body.endwiki-quickEditHostFullscreen
 
 .ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .ipe-quickEdit__form,
 .ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .ipe-quickEdit__content,
-.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .ipe-quickEdit__content > .endwiki-monacoEditor,
-.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .endwiki-monacoEditor__surface,
-.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .endwiki-monacoEditor__container {
+.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .ipe-quickEdit__content > .endwiki-codeEditor,
+.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .endwiki-codeEditor__surface,
+.ipe-modal-modal.endwiki-quickEditModal--windowFullscreen .endwiki-codeEditor__container {
   height: 100% !important;
   min-height: 0 !important;
 }
@@ -344,7 +344,7 @@ body.endwiki-quickEditHostFullscreen
   cursor: not-allowed;
 }
 
-.endwiki-monacoEditor {
+.endwiki-codeEditor {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -353,7 +353,7 @@ body.endwiki-quickEditHostFullscreen
   min-height: 0;
 }
 
-.endwiki-monacoEditor__surface {
+.endwiki-codeEditor__surface {
   position: relative;
   display: flex;
   flex: 1 1 auto;
@@ -368,33 +368,33 @@ body.endwiki-quickEditHostFullscreen
     box-shadow var(--transition-slow);
 }
 
-.endwiki-monacoEditor__surface:focus-within {
+.endwiki-codeEditor__surface:focus-within {
   border-color: var(--color-primary);
   box-shadow: inset 0 0 0 var(--border-width) var(--color-primary);
 }
 
-.endwiki-monacoEditor__container {
+.endwiki-codeEditor__container {
   width: 100%;
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
 }
 
-.endwiki-monacoEditor__compatTextarea {
+.endwiki-codeEditor__compatTextarea {
   display: none;
 }
 
-.endwiki-monacoEditor[data-editor-mode='textarea'] .endwiki-monacoEditor__surface {
+.endwiki-codeEditor[data-editor-mode='textarea'] .endwiki-codeEditor__surface {
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
-.endwiki-monacoEditor[data-editor-mode='textarea'] .endwiki-monacoEditor__compatTextarea {
+.endwiki-codeEditor[data-editor-mode='textarea'] .endwiki-codeEditor__compatTextarea {
   display: block;
 }
 
-.endwiki-monacoEditor[data-editor-mode='textarea'] .endwiki-monacoEditor__compatTextarea[name='text'] {
+.endwiki-codeEditor[data-editor-mode='textarea'] .endwiki-codeEditor__compatTextarea[name='text'] {
   height: 100%;
   min-height: 0;
 }

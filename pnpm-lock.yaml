@@ -437,6 +437,9 @@ importers:
       '@inpageedit/modal':
         specifier: workspace:^
         version: link:../../packages/modal
+      ace-builds:
+        specifier: ^1.43.6
+        version: 1.43.6
       jsx-dom:
         specifier: ^8.1.6
         version: 8.1.6
@@ -2388,6 +2391,9 @@ packages:
     resolution: {integrity: sha512-e89uuTLMh0U5cZ9iDpEI2senqPGfbPRTHM/0AaQkcxnpqjkZqDYP8rpfm7edOz8s+pOCOROEy1PIveSW8+fL5g==}
     peerDependencies:
       vue: ^3.5.0
+
+  ace-builds@1.43.6:
+    resolution: {integrity: sha512-L1ddibQ7F3vyXR2k2fg+I8TQTPWVA6CKeDQr/h2+8CeyTp3W6EQL8xNFZRTztuP8xNOAqL3IYPqdzs31GCjDvg==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -7567,6 +7573,8 @@ snapshots:
     dependencies:
       vue: 3.5.26(typescript@5.9.3)
     optional: true
+
+  ace-builds@1.43.6: {}
 
   acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:

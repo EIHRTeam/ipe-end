@@ -15,8 +15,9 @@ import { sleep } from '@/utils/sleep'
 import { IPEModal } from '@inpageedit/modal'
 import type { ReactNode } from 'jsx-dom'
 import {
-  MonacoTextareaBridge,
-  type MonacoTextareaBridgeHandle,
+  CodeEditorTextareaBridge,
+  type CodeEditorEngine,
+  type CodeEditorTextareaBridgeHandle,
   type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
 import { prettyJson } from '@plugin/utils/result'
@@ -56,6 +57,7 @@ declare module '@/InPageEdit' {
     'quickEdit.watchList': WatchlistAction
     'quickEdit.keyshortcut.save': string
     'quickEdit.editFont': string
+    'quickEdit.editorEngine': CodeEditorEngine
     'quickEdit.monacoTheme': MonacoThemeMode
   }
 }
@@ -151,6 +153,12 @@ export interface EndWikiQuickEditSubmitPayload {
     ])
       .description("Font to use in quick edit's textarea")
       .default('preferences'),
+    'quickEdit.editorEngine': Schema.union([
+      Schema.const('monaco').description('Monaco'),
+      Schema.const('ace').description('ACE'),
+    ])
+      .description('Quick edit editor engine')
+      .default('monaco'),
     'quickEdit.monacoTheme': Schema.union([
       Schema.const('auto').description('Follow IPE/system theme'),
       Schema.const('light').description('Light mode'),
@@ -210,6 +218,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       typeof payload.editMinor === 'boolean'
         ? payload.editMinor
         : (await this.ctx.preferences.get('quickEdit.editMinor'))!
+    const preferredEditorEngine = await this.ctx.preferences.get('quickEdit.editorEngine')
+    const editorEngine: CodeEditorEngine = preferredEditorEngine === 'ace' ? 'ace' : 'monaco'
     const monacoTheme =
       ((await this.ctx.preferences.get('quickEdit.monacoTheme')) as MonacoThemeMode) || 'auto'
     const fontOptions = await this.getEditFontOptions()
@@ -337,7 +347,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       editNotices,
     })
 
-    let editorBridge: MonacoTextareaBridgeHandle | null = null
+    let editorBridge: CodeEditorTextareaBridgeHandle | null = null
     let editFormRef: HTMLFormElement | null = null
     let editorContentRef: HTMLDivElement | null = null
     let summaryInputRef: HTMLInputElement | null = null
@@ -749,7 +759,8 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             minHeight: '0',
           }}
         >
-          <MonacoTextareaBridge
+          <CodeEditorTextareaBridge
+            editorEngine={editorEngine}
             textareaClassName={`ipe-quickEdit__textarea ${fontOptions.className}`}
             textareaStyle={{ fontFamily: fontOptions.fontFamily }}
             name="text"
@@ -768,7 +779,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
               editorBridge.setLanguage(payloadMode === 'xml' ? 'xml' : 'json')
             }}
             onError={(error) => {
-              this.logger.warn('Monaco editor initialization failed, fallback to textarea.', error)
+              this.logger.warn('Code editor initialization failed, fallback to textarea.', error)
               if (!fallbackNotified) {
                 fallbackNotified = true
                 this.ctx.modal.notify('warning', {
