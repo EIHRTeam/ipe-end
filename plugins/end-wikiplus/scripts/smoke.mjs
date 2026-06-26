@@ -3,10 +3,13 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { JSDOM } from 'jsdom'
 
-const dom = new JSDOM('<!doctype html><html><head></head><body><div id="app"></div></body></html>', {
-  url: 'http://127.0.0.1:9000/wiki-renderer/test',
-  pretendToBeVisual: true,
-})
+const dom = new JSDOM(
+  '<!doctype html><html><head></head><body><div id="app"></div></body></html>',
+  {
+    url: 'http://127.0.0.1:9000/wiki-renderer/test',
+    pretendToBeVisual: true,
+  }
+)
 
 const { window } = dom
 const originalProcess = globalThis.process
@@ -39,17 +42,15 @@ Object.defineProperty(globalThis, 'navigator', { value: window.navigator, config
 if (typeof window.document.queryCommandSupported !== 'function') {
   window.document.queryCommandSupported = () => false
 }
-globalThis.customElements =
-  window.customElements ||
-  ({
-    define() {},
-    get() {
-      return undefined
-    },
-    whenDefined() {
-      return Promise.resolve()
-    },
-  })
+globalThis.customElements = window.customElements || {
+  define() {},
+  get() {
+    return undefined
+  },
+  whenDefined() {
+    return Promise.resolve()
+  },
+}
 
 window.matchMedia =
   window.matchMedia ||
@@ -87,13 +88,13 @@ globalThis.IntersectionObserver = class {
 }
 
 const artifactEntryPath = fileURLToPath(
-  new URL('../artifacts/inpageedit-next-end-wikiplus/dist/index.js', import.meta.url),
+  new URL('../artifacts/inpageedit-next-end-wikiplus/dist/index.js', import.meta.url)
 )
 const artifactEntrySource = readFileSync(artifactEntryPath, 'utf8')
 
 assert.ok(
   !artifactEntrySource.includes('process.env.NODE_ENV'),
-  'bundle should not leak process.env.NODE_ENV into runtime code',
+  'bundle should not leak process.env.NODE_ENV into runtime code'
 )
 
 const listeners = new Map()
@@ -340,6 +341,22 @@ const hostContext = {
         },
       })
     },
+    stageImageFile: async () => ok({ url: 'https://litter.catbox.moe/example.png' }),
+    uploadImageByUrl: async () =>
+      ok({
+        code: 0,
+        message: 'OK',
+        data: {
+          image: {
+            id: 'image-1',
+            url: 'https://static.example.com/final.webp',
+            width: 1024,
+            height: 512,
+            format: 'webp',
+            size: 12345,
+          },
+        },
+      }),
     submitItemUpdate: async (args) => {
       submitItemUpdateCalls.push(args)
       return ok({ revisionId: 2 })
@@ -409,7 +426,7 @@ function findModalButton(windowEl, labels) {
 async function main() {
   const artifactUrl = new URL(
     `../artifacts/inpageedit-next-end-wikiplus/dist/index.js?ts=${Date.now()}`,
-    import.meta.url,
+    import.meta.url
   )
   const processDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'process')
   Object.defineProperty(globalThis, 'process', {
@@ -433,20 +450,36 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 400))
 
   const buttonIds = [...window.document.querySelectorAll('#ipe-edit-toolbox .ipe-toolbox-btn')].map(
-    (node) => node.id || node.getAttribute('data-id'),
+    (node) => node.id || node.getAttribute('data-id')
   )
 
   assert.equal(window.document.body.getAttribute('data-end-wikiplus-ipe'), 'active')
   assert.deepEqual(buttonIds, [
     'ipe-toolbox__quick-edit-btn',
+    'ipe-toolbox__quick-upload-btn',
     'ipe-toolbox__preferences-btn',
     'toolbox-toggler',
   ])
   assert.equal(typeof cleanup, 'function')
 
-  window.document.querySelector('#ipe-toolbox__quick-edit-btn')?.dispatchEvent(
-    new window.MouseEvent('click', { bubbles: true }),
+  window.document
+    .querySelector('#ipe-toolbox__quick-upload-btn')
+    ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  assert.ok(
+    window.document.body.textContent?.includes(
+      'Sign in to a SKLand account in the host app before uploading.'
+    )
   )
+  assert.ok(
+    window.document.body.textContent?.includes(
+      'The button says "file", but phase 1 only uploads image files.'
+    )
+  )
+
+  window.document
+    .querySelector('#ipe-toolbox__quick-edit-btn')
+    ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   assert.ok(window.document.querySelector('.ipe-modal-modal.is-centered'))
@@ -535,9 +568,9 @@ async function main() {
   assert.deepEqual(clearItemDraftCalls, [{ itemId: '1', lang: 'zh_Hans' }])
   assert.ok(window.document.body.textContent?.includes('Your changes have been saved.'))
 
-  window.document.querySelector('#ipe-toolbox__preferences-btn')?.dispatchEvent(
-    new window.MouseEvent('click', { bubbles: true }),
-  )
+  window.document
+    .querySelector('#ipe-toolbox__preferences-btn')
+    ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   assert.ok(window.document.querySelectorAll('.ipe-modal-modal.is-centered').length >= 1)
@@ -568,8 +601,8 @@ async function main() {
         buttonIds,
       },
       null,
-      2,
-    ),
+      2
+    )
   )
 }
 

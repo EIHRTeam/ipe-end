@@ -193,14 +193,14 @@ export function CodeEditorTextareaBridge(props: CodeEditorTextareaBridgeProps) {
     flex: '1 1 auto',
     height: '100%',
     minHeight: '0',
-  }
+  } as const
   const defaultEditorSizeStyle = {
     display: 'flex',
     flex: '1 1 auto',
     width: '100%',
     height: '100%',
     minHeight: '0',
-  }
+  } as const
 
   const defaultTextareaStyle = {
     ...defaultEditorSizeStyle,
@@ -437,13 +437,19 @@ export function CodeEditorTextareaBridge(props: CodeEditorTextareaBridgeProps) {
     rootRef.dataset.editorMode = mode
   }
 
-  const enableTextareaFallback = (error: unknown) => {
+  const enableTextareaFallback = (
+    error?: unknown,
+    options: { reportError?: boolean } = {}
+  ) => {
     setMode('textarea')
     containerRef?.remove()
     if (textareaRef) {
       textareaRef.style.display = 'block'
     }
-    props.onError?.(error)
+    props.onReady?.(handle)
+    if (options.reportError !== false && error !== undefined) {
+      props.onError?.(error)
+    }
   }
 
   const getEditorTypography = () => {
@@ -547,6 +553,9 @@ export function CodeEditorTextareaBridge(props: CodeEditorTextareaBridgeProps) {
 
       if (editorEngine === 'ace') {
         await mountAceEditor(currentToken)
+      } else if (typeof Worker === 'undefined') {
+        enableTextareaFallback(undefined, { reportError: false })
+        return
       } else {
         await mountMonacoEditor(currentToken)
       }

@@ -12,6 +12,8 @@
     "package:zip": "node ./scripts/package-zip.mjs"
   },
   "dependencies": {
+    "@EIHRTeam/wiki-upload-wikiplus": "0.1.0",
+    "@eihrteam/xml": "0.3.4",
     "@cordisjs/core": "^3.18.1",
     "@inpageedit/logger": "^0.1.0",
     "@inpageedit/modal": "workspace:^",

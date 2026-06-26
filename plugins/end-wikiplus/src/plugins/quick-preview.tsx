@@ -59,30 +59,31 @@ export class EndWikiQuickPreviewPlugin extends BasePlugin {
     const { $ } = this.ctx
     const capability = capabilityByKey('quick-preview')
 
-    if (!modal || modal.isDestroyed) {
-      modal = this.ctx.modal
-        .createObject({
-          className: 'in-page-edit ipe-quickPreview',
-          sizeClass: 'large',
-          center: false,
-          ...modalOptions,
-        })
-        .init()
-    }
+    const activeModal: IPEModal =
+      !modal || modal.isDestroyed
+        ? this.ctx.modal
+            .createObject({
+              className: 'in-page-edit ipe-quickPreview',
+              sizeClass: 'large',
+              center: false,
+              ...modalOptions,
+            })
+            .init()
+        : modal
 
-    modal.show()
-    modal.setTitle($`Preview - Loading...`)
-    modal.setContent(<ProgressBar /> as HTMLElement)
-    modal.bringToFront()
+    activeModal.show()
+    activeModal.setTitle($`Preview - Loading...`)
+    activeModal.setContent(<ProgressBar /> as HTMLElement)
+    activeModal.bringToFront()
     this.ctx.emit('quick-preview/show-modal', {
       ctx: this.ctx,
       text,
-      modal,
+      modal: activeModal,
       wikiPage,
     })
 
-    modal.setTitle($(wikiPage.pageInfo.title)`Preview - {{ $1 }}`)
-    modal.setContent(
+    activeModal.setTitle($(wikiPage.pageInfo.title)`Preview - {{ $1 }}`)
+    activeModal.setContent(
       (
         <section className="endwiki-ipe-stack">
           <p className="endwiki-ipe-muted">
@@ -93,7 +94,7 @@ export class EndWikiQuickPreviewPlugin extends BasePlugin {
       ) as HTMLElement,
     )
 
-    return modal
+    return activeModal
   }
 
   private async injectQuickEdit({

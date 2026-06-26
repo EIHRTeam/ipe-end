@@ -37,9 +37,9 @@ export class InPageEdit extends Context {
 export { Schema }
 
 export interface PreferencesMap {}
-export interface Events<C extends InPageEdit = InPageEdit> extends CordisEvents<C> {}
-export type IPEPlugin<C = any> = CordisPlugin<InPageEdit, C>
-export type IPERegistry = CordisRegistry<InPageEdit>
+export interface Events<C extends Context = Context> extends CordisEvents<C> {}
+export type IPEPlugin<C = any> = CordisPlugin<Context, C>
+export type IPERegistry = CordisRegistry<Context>
 
 export {
   Inject,

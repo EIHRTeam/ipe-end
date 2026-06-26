@@ -3,6 +3,12 @@ packages:
   - docs
   - plugins/*
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
+overrides:
+  '@EIHRTeam/wiki-upload-wikiplus>@EIHRTeam/wiki-upload-core': 0.1.0
+
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+
+patchedDependencies:
+  '@EIHRTeam/wiki-upload-core@0.1.0': patches/@EIHRTeam__wiki-upload-core@0.1.0.patch

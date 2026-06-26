@@ -12,7 +12,15 @@ export const CAPABILITY_MATRIX: CapabilityDescriptor[] = [
     key: 'quick-edit',
     label: 'Quick Edit',
     status: 'supported',
-    summary: 'Edits Endfield Wiki⁺ item JSON through host wiki.update-info / submit / draft-clear APIs.',
+    summary:
+      'Edits Endfield Wiki⁺ item JSON through host wiki.update-info / submit / draft-clear APIs.',
+  },
+  {
+    key: 'quick-upload',
+    label: 'Quick Upload',
+    status: 'supported',
+    summary:
+      'Uploads images through the host staging bridge and the SKLand wiki upload-by-url API.',
   },
   {
     key: 'quick-diff',

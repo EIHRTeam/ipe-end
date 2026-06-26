@@ -1,0 +1,131 @@
+diff --git a/dist/browser.js b/dist/browser.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2f48c35e28f09af60985b8821c06955201fe2c2
+--- /dev/null
++++ b/dist/browser.js
+@@ -0,0 +1,113 @@
++import {
++  ALLOWED_AUDIO_EXTENSIONS,
++  CredentialsError,
++  DEFAULT_BASE_URL,
++  DEFAULT_PLATFORM,
++  DEFAULT_UPLOAD_KIND,
++  DEFAULT_VNAME,
++  HostError,
++  InputError,
++  MAX_AUDIO_FILE_SIZE_BYTES,
++  ResolverError,
++  SKLAND_USER_AGENT,
++  SklandUploadError,
++  TransportError,
++  extractApiMessage,
++  normalizeImageUrl,
++  normalizeUploadedWikiAudio,
++  normalizeUploadedWikiImage,
++  toSklandUploadError,
++  trimCredentialsValue
++} from "./chunk-7SYU7YT7.js";
++
++function normalizeConcurrency(value) {
++  if (!value) return 1;
++  if (!Number.isFinite(value) || value < 1) return 1;
++  return Math.floor(value);
++}
++
++function parseUploadInput(input) {
++  if (typeof input === "string") {
++    return { url: input };
++  }
++  return input.kind === void 0 ? { url: input.url } : { url: input.url, kind: input.kind };
++}
++
++async function mapWithConcurrency(inputs, options, worker, fallbackErrorCode) {
++  if (inputs.length === 0) return [];
++  const concurrency = normalizeConcurrency(options?.concurrency);
++  const results = Array.from({ length: inputs.length });
++  let nextIndex = 0;
++
++  async function runWorker() {
++    while (true) {
++      const currentIndex = nextIndex;
++      nextIndex += 1;
++      if (currentIndex >= inputs.length) {
++        return;
++      }
++
++      const input = inputs[currentIndex];
++      try {
++        const data = await worker(input, currentIndex);
++        results[currentIndex] = {
++          index: currentIndex,
++          input,
++          ok: true,
++          data
++        };
++      } catch (error) {
++        results[currentIndex] = {
++          index: currentIndex,
++          input,
++          ok: false,
++          error: toSklandUploadError(error, fallbackErrorCode)
++        };
++      }
++    }
++  }
++
++  const workers = Array.from({ length: Math.min(concurrency, inputs.length) }, () => runWorker());
++  await Promise.all(workers);
++  return results;
++}
++
++function registerDevice() {
++  throw new Error("registerDevice is not available from the browser build.");
++}
++
++async function signWikiRequest() {
++  throw new Error("signWikiRequest is not available from the browser build.");
++}
++
++function createSklandUploadClient() {
++  throw new Error("createSklandUploadClient is not available from the browser build.");
++}
++
++export {
++  ALLOWED_AUDIO_EXTENSIONS,
++  CredentialsError,
++  DEFAULT_BASE_URL,
++  DEFAULT_PLATFORM,
++  DEFAULT_UPLOAD_KIND,
++  DEFAULT_VNAME,
++  HostError,
++  InputError,
++  MAX_AUDIO_FILE_SIZE_BYTES,
++  ResolverError,
++  SKLAND_USER_AGENT,
++  SklandUploadError,
++  TransportError,
++  createSklandUploadClient,
++  extractApiMessage,
++  mapWithConcurrency,
++  normalizeConcurrency,
++  normalizeImageUrl,
++  normalizeUploadedWikiAudio,
++  normalizeUploadedWikiImage,
++  parseUploadInput,
++  registerDevice,
++  signWikiRequest,
++  toSklandUploadError,
++  trimCredentialsValue
++};
+diff --git a/package.json b/package.json
+index 546661618fcce036dc7ab3440e6f91a96ff957db..2e9ca6c446a5f49341dd224d1a50561d02aface8 100644
+--- a/package.json
++++ b/package.json
+@@ -21,6 +21,7 @@
+   "exports": {
+     ".": {
+       "types": "./dist/index.d.ts",
++      "browser": "./dist/browser.js",
+       "default": "./dist/index.js"
+     }
+   },

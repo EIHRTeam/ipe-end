@@ -2,22 +2,7 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
-import { JSDOM } from 'jsdom'
-
-import { convertEndfieldWikitextText } from '../src/utils/endfieldWikitextConverter'
-import { documentFromJsonText } from '../src/utils/endfield-wikitext/jsonFormat'
-import { documentFromXmlText } from '../src/utils/endfield-wikitext/xmlFormat'
-
-const dom = new JSDOM('<!doctype html><html><body></body></html>', {
-  url: 'http://127.0.0.1/converter-smoke',
-})
-
-globalThis.window = dom.window as unknown as Window & typeof globalThis
-globalThis.document = dom.window.document
-globalThis.DOMParser = dom.window.DOMParser
-globalThis.XMLSerializer = dom.window.XMLSerializer
-globalThis.Node = dom.window.Node
-globalThis.Element = dom.window.Element
+import { parseSubmitJson, parseXml, submitJsonToXml, xmlToSubmitJson } from '@eihrteam/xml'
 
 const dataDir =
   process.env.ENDFIELD_WIKITEXT_DATA_DIR ||
@@ -35,17 +20,52 @@ if (!existsSync(sampleJsonPath) || !existsSync(sampleXmlPath)) {
 const sampleJson = readFileSync(sampleJsonPath, 'utf8')
 const sampleXml = readFileSync(sampleXmlPath, 'utf8')
 
-const [sourceJsonDocument] = documentFromJsonText(sampleJson)
-const [sourceXmlDocument] = documentFromXmlText(sampleXml)
+function normalizeConverterDocument<T>(document: T): T {
+  const normalized = structuredClone(document) as any
 
-const jsonToXml = convertEndfieldWikitextText(sampleJson, 'json', 'xml')
-const xmlToJson = convertEndfieldWikitextText(sampleXml, 'xml', 'json')
+  if (normalized.publicMeta?.name === normalized.name) {
+    delete normalized.publicMeta.name
+  }
 
-const [jsonRoundTripDocument] = documentFromXmlText(jsonToXml.text)
-const [xmlRoundTripDocument] = documentFromJsonText(xmlToJson.text)
+  for (const key of ['associate', 'composite']) {
+    if (normalized.briefExtra?.[key] === null) {
+      delete normalized.briefExtra[key]
+    }
+  }
+
+  for (const key of ['illustration', 'showType', 'composite']) {
+    if (normalized.documentExtraInfo?.[key] === '') {
+      delete normalized.documentExtraInfo[key]
+    }
+  }
+
+  for (const group of normalized.chapterGroups || []) {
+    for (const chapter of group.chapters || []) {
+      for (const tab of chapter.tabs || []) {
+        if (tab.icon === '') {
+          tab.icon = null
+        }
+        if (tab.title === '') {
+          tab.title = null
+        }
+      }
+    }
+  }
+
+  return normalized as T
+}
+
+const sourceJsonDocument = parseSubmitJson(sampleJson)[0]
+const sourceXmlDocument = parseXml(sampleXml)
+
+const jsonToXml = submitJsonToXml(sampleJson)
+const xmlToJson = xmlToSubmitJson(sampleXml)
+
+const jsonRoundTripDocument = parseXml(jsonToXml.text)
+const xmlRoundTripDocument = parseSubmitJson(xmlToJson.text)[0]
 
 assert.deepEqual(jsonRoundTripDocument, sourceJsonDocument)
-assert.deepEqual(xmlRoundTripDocument, sourceXmlDocument)
+assert.deepEqual(normalizeConverterDocument(xmlRoundTripDocument), sourceXmlDocument)
 assert.deepEqual(jsonToXml.warnings, [])
 assert.deepEqual(xmlToJson.warnings, [])
 

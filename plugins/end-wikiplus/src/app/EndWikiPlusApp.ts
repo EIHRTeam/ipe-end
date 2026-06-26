@@ -68,9 +68,9 @@ export class EndWikiPlusApp extends Context {
   private markServiceAsBuiltIn(services: string[]) {
     const internalKey = (this.constructor as typeof Context & { internal?: symbol }).internal
     if (!internalKey || !Array.isArray(services) || services.length === 0) return this
-    const internal = (this as Record<PropertyKey, Record<string, { type?: string; builtin?: boolean }>>)[
-      internalKey
-    ]
+    const internal = (
+      this as unknown as Record<PropertyKey, Record<string, { type?: string; builtin?: boolean }>>
+    )[internalKey]
     if (!internal) return this
     for (const name of services) {
       const entry = internal[name]

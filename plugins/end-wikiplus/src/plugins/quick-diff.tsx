@@ -54,23 +54,26 @@ export class EndWikiQuickDiffPlugin extends BasePlugin {
     const { $ } = this.ctx
     const capability = capabilityByKey('quick-diff')
 
-    if (!modal || modal.isDestroyed) {
-      modal = this.ctx.modal
-        .createObject({
-          title: $`Loading diff...`,
-          content: '',
-          className: 'quick-diff',
-          center: false,
-          ...modalOptions,
-        })
-        .init()
-    } else {
-      modal.removeButton('*')
+    const activeModal: IPEModal =
+      !modal || modal.isDestroyed
+        ? this.ctx.modal
+            .createObject({
+              title: $`Loading diff...`,
+              content: '',
+              className: 'quick-diff',
+              center: false,
+              ...modalOptions,
+            })
+            .init()
+        : modal
+
+    if (modal && !modal.isDestroyed) {
+      activeModal.removeButton('*')
     }
 
-    modal.show()
-    modal.setTitle($(wikiPage.pageInfo.title)`Quick Diff - {{ $1 }}`)
-    modal.setContent(
+    activeModal.show()
+    activeModal.setTitle($(wikiPage.pageInfo.title)`Quick Diff - {{ $1 }}`)
+    activeModal.setContent(
       (
         <section className="endwiki-ipe-stack endwiki-ipe-json-diff">
           <p className="endwiki-ipe-muted">
@@ -87,16 +90,16 @@ export class EndWikiQuickDiffPlugin extends BasePlugin {
         </section>
       ) as HTMLElement,
     )
-    modal.bringToFront()
+    activeModal.bringToFront()
     this.ctx.emit('quick-diff/show-modal', {
       ctx: this.ctx,
-      modal,
+      modal: activeModal,
       wikiPage,
       originalText,
       currentText,
     })
 
-    return modal
+    return activeModal
   }
 
   private async injectQuickEdit({

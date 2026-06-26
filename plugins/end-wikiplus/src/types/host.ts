@@ -55,7 +55,9 @@ export type HostPluginEventHandler = (payload: unknown) => void | Promise<void>
 
 export interface HostPluginContext {
   host: {
-    getInfo(): Promise<HostPluginApiResult<{ apiVersion: number; appVersion: string; platform: string }>>
+    getInfo(): Promise<
+      HostPluginApiResult<{ apiVersion: number; appVersion: string; platform: string }>
+    >
   }
   page: {
     getContext(): Promise<HostPluginApiResult<HostPageContext>>
@@ -65,14 +67,18 @@ export interface HostPluginContext {
     fetchItem(args: { itemId: string }): Promise<HostPluginApiResult<unknown>>
     fetchMe(): Promise<HostPluginApiResult<unknown>>
     fetchUpdateInfo(args: { itemId: string; lang: string }): Promise<HostPluginApiResult<unknown>>
+    stageImageFile(args: {
+      name: string
+      type: string
+      size: number
+      dataBase64: string
+    }): Promise<HostPluginApiResult<unknown>>
+    uploadImageByUrl(args: { url: string; kind?: string }): Promise<HostPluginApiResult<unknown>>
     submitItemUpdate(args: {
       itemJson: string
       commitMsg?: string
     }): Promise<HostPluginApiResult<unknown>>
-    clearItemDraft(args: {
-      itemId: string
-      lang: string
-    }): Promise<HostPluginApiResult<unknown>>
+    clearItemDraft(args: { itemId: string; lang: string }): Promise<HostPluginApiResult<unknown>>
   }
   storage: {
     getItem(key: string): Promise<HostPluginApiResult<string | null>>
@@ -85,10 +91,7 @@ export interface HostPluginContext {
     getLoaded(): Promise<HostPluginApiResult<HostPluginSummary[]>>
   }
   events: {
-    on(
-      event: string,
-      handler: HostPluginEventHandler,
-    ): Promise<HostPluginApiResult<() => void>>
+    on(event: string, handler: HostPluginEventHandler): Promise<HostPluginApiResult<() => void>>
   }
   auth?: {
     getSession(): Promise<HostPluginApiResult<HostAuthSessionSummary>>

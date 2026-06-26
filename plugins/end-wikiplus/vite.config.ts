@@ -94,9 +94,9 @@ export default defineConfig({
       fileName: () => 'index.js',
       cssFileName: 'styles',
     },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        inlineDynamicImports: true,
+        codeSplitting: false,
       },
     },
   },

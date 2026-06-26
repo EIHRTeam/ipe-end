@@ -8,6 +8,7 @@ import { EndWikiPreferencesUIPlugin } from '@plugin/plugins/preferences-ui'
 import { EndWikiQuickDiffPlugin } from '@plugin/plugins/quick-diff'
 import { EndWikiQuickEditPlugin } from '@plugin/plugins/quick-edit'
 import { EndWikiQuickPreviewPlugin } from '@plugin/plugins/quick-preview'
+import { EndWikiQuickUploadPlugin } from '@plugin/plugins/quick-upload'
 import { EndWikiPluginStorePlugin } from '@plugin/plugins/plugin-store'
 import { pluginRuntimeDebug } from '@plugin/utils/debug'
 import { installHostBottomInsetSync } from '@plugin/utils/hostBottomInset'
@@ -81,9 +82,7 @@ const bootApp = async (host: HostPluginContext) => {
     new Promise((_, reject) => {
       window.setTimeout(() => {
         reject(
-          new Error(
-            `toolbox 注入超时，DOM=${Boolean(document.querySelector('#ipe-edit-toolbox'))}`
-          )
+          new Error(`toolbox 注入超时，DOM=${Boolean(document.querySelector('#ipe-edit-toolbox'))}`)
         )
       }, 2000)
     }),
@@ -93,6 +92,7 @@ const bootApp = async (host: HostPluginContext) => {
     toolboxExists: Boolean(document.querySelector('#ipe-edit-toolbox')),
   })
   app.plugin(EndWikiPreferencesUIPlugin as never)
+  app.plugin(EndWikiQuickUploadPlugin as never)
   app.plugin(EndWikiQuickDiffPlugin as never)
   app.plugin(EndWikiQuickPreviewPlugin as never)
   app.plugin(EndWikiPluginStorePlugin as never)
@@ -100,6 +100,7 @@ const bootApp = async (host: HostPluginContext) => {
   pluginRuntimeDebug.debug('boot', 'UI 插件已挂载', {
     plugins: [
       'EndWikiPreferencesUIPlugin',
+      'EndWikiQuickUploadPlugin',
       'EndWikiQuickDiffPlugin',
       'EndWikiQuickPreviewPlugin',
       'EndWikiPluginStorePlugin',

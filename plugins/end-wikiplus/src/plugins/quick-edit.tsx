@@ -13,6 +13,7 @@ import { makeCallable } from '@/utils/makeCallable.js'
 import { noop } from '@/utils/noop'
 import { sleep } from '@/utils/sleep'
 import { IPEModal } from '@inpageedit/modal'
+import { submitJsonToXml, xmlToSubmitJson } from '@eihrteam/xml'
 import type { ReactNode } from 'jsx-dom'
 import {
   CodeEditorTextareaBridge,
@@ -21,7 +22,6 @@ import {
   type MonacoThemeMode,
 } from '@plugin/components/MonacoTextareaBridge'
 import { prettyJson } from '@plugin/utils/result'
-import { convertEndfieldWikitextText } from '@plugin/utils/endfieldWikitextConverter'
 import {
   createSubmitPayload,
   getSubmitPayloadCommitMsg,
@@ -66,6 +66,29 @@ const BUILT_IN_FONT_OPTIONS = ['preferences', 'monospace', 'sans-serif', 'serif'
 type EndWikiQuickEditPresentationMode = 'default' | 'window-fullscreen'
 type EndWikiQuickEditPayloadMode = 'json' | 'xml'
 const HOST_FULLSCREEN_CLASS = 'endwiki-quickEditHostFullscreen'
+
+function convertSubmitPayloadText(
+  source: string,
+  fromFormat: EndWikiQuickEditPayloadMode,
+  toFormat: EndWikiQuickEditPayloadMode
+) {
+  if (fromFormat === toFormat) {
+    return {
+      text: source,
+      warnings: [],
+    }
+  }
+
+  if (fromFormat === 'json' && toFormat === 'xml') {
+    return submitJsonToXml(source)
+  }
+
+  if (fromFormat === 'xml' && toFormat === 'json') {
+    return xmlToSubmitJson(source)
+  }
+
+  throw new Error(`Unsupported payload conversion: ${fromFormat} -> ${toFormat}`)
+}
 
 type HostQuickEditRevision = {
   content: string
@@ -493,7 +516,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       toFormat: EndWikiQuickEditPayloadMode
     ) => {
       const source = getEditorValue()
-      const converted = convertEndfieldWikitextText(source, fromFormat, toFormat)
+      const converted = convertSubmitPayloadText(source, fromFormat, toFormat)
       setEditorValue(converted.text)
       applyPayloadMode(toFormat, {
         syncSummaryFromJson: true,
@@ -656,7 +679,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
       }
 
       const icons = modal.get$icons()
-      const closeButton = icons.querySelector<HTMLButtonElement>('.ipe-modal-modal__close')
+      const closeButton = icons.querySelector('.ipe-modal-modal__close') as HTMLButtonElement | null
 
       windowFullscreenButton = createHeaderIconButton(
         $`Window fullscreen`,
@@ -811,7 +834,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
                 value="json"
                 inputProps={{
                   checked: true,
-                  ref: (el) => {
+                  ref: (el: unknown) => {
                     payloadModeJsonRadioRef = el as HTMLInputElement
                   },
                   onChange: () => {
@@ -826,7 +849,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
                 id="payloadMode-xml"
                 value="xml"
                 inputProps={{
-                  ref: (el) => {
+                  ref: (el: unknown) => {
                     payloadModeXmlRadioRef = el as HTMLInputElement
                   },
                   onChange: () => {
@@ -889,7 +912,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
             name="summary"
             value={initialCommitMsg}
             inputProps={{
-              ref: (el) => {
+              ref: (el: unknown) => {
                 summaryInputRef = el as HTMLInputElement
               },
               onInput: (event: Event) => {
@@ -973,7 +996,7 @@ export class EndWikiQuickEditPlugin extends BasePlugin {
           try {
             let submitText = (formData.get('text') as string) || ''
             if (payloadMode === 'xml') {
-              submitText = convertEndfieldWikitextText(submitText, 'xml', 'json').text
+              submitText = xmlToSubmitJson(submitText).text
             }
 
             await this.handleSubmit({

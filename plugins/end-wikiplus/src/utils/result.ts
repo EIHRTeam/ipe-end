@@ -8,10 +8,10 @@ export function unwrapHostResult<T>(
   result: HostPluginApiResult<T>,
   fallbackMessage = 'Host request failed'
 ): T {
-  if (result.ok) {
-    return result.data
+  if (!result.ok) {
+    throw new Error(result.error.message || fallbackMessage)
   }
-  throw new Error(result.error.message || fallbackMessage)
+  return result.data
 }
 
 export function prettyJson(value: unknown): string {

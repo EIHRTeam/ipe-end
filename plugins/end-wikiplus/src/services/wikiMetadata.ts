@@ -11,8 +11,8 @@ function makeUserInfo(session: HostAuthSessionSummary | null) {
   return {
     id: fallbackId,
     name: fallbackName,
-    groups: [],
-    rights: [],
+    groups: [] as string[],
+    rights: [] as string[],
     options: {
       language: 'zh-hans',
       minordefault: 0,
