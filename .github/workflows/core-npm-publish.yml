@@ -93,6 +93,11 @@ jobs:
           echo "tag=$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Configure GitHub Packages auth
+        run: pnpm config set '//npm.pkg.github.com/:_authToken' "$NODE_AUTH_TOKEN" --location=user
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
       - name: Install dependencies
         run: pnpm install
 
